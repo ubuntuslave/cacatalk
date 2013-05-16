@@ -60,7 +60,31 @@ int main(int argc, char **argv)
   if (argc > 1)
   {
     strcpy(ip_name, argv[1]);
-    sockfd = connect_to_peer_socket(ip_name);
+//    sockfd = connect_to_peer_socket(ip_name);
+    struct sockaddr_in server;
+    struct hostent *host;
+
+    if ((host = gethostbyname(ip_name)) == NULL )
+    {
+      ERROR_EXIT("gethostbyname", 1);
+    }
+
+    memset(&server, 0, sizeof(server));
+    memcpy(&server.sin_addr, SOCKADDR *host->h_addr_list, SIZE);
+    server.sin_family = AF_INET;
+    server.sin_port = PORT;
+
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+      ERROR_EXIT("socketcall failed", 1)
+    }
+
+    if (connect(sockfd, SOCKADDR &server, sizeof(server)) == -1)
+    {
+      ERROR_EXIT("connect call failed", 1);
+    }
+
+    printf("Connected to FD: %d\n", sockfd);
   }
   // ----------------------------------------------------------------------
 
@@ -249,6 +273,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
       case CACA_KEY_TAB:
       case CACA_KEY_RETURN:
         // Send line through socket
+        /* FIXME
         sendline = malloc(entries[e].size+1);
         recline = malloc(MAXLINE);
 
@@ -261,7 +286,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
         }
         sendline[j] = '\0'; // Null character terminated string
         send_receive_data_through_socket(sockfd, sendline, recline);
-
+        */
         e = (e + 1) % TEXT_ENTRIES; // Switch to next line
         break;
       case CACA_KEY_HOME:
