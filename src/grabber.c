@@ -35,7 +35,7 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-int grab(caca_canvas_t *cv, caca_display_t *dp);
+int grab(caca_canvas_t *cv, caca_display_t *dp, int img_width, int img_height);
 
 void xioctl(int fh, int request, void *arg);
 
@@ -45,6 +45,8 @@ int main(int argc, char **argv)
   int quit = 0;
   caca_canvas_t *cv;
   caca_display_t *dp;
+  int img_width = 640;
+  int img_height = 480;
 
 //  cv = caca_create_canvas(80, 24);
   cv = caca_create_canvas(0, 0);
@@ -134,7 +136,7 @@ int main(int argc, char **argv)
 
     if (demo)
     {
-      demo(cv, dp);
+      demo(cv, dp, img_width, img_height);
 
       caca_clear_canvas(cv);
       caca_refresh_display(dp);
@@ -157,7 +159,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-int grab(caca_canvas_t *cv, caca_display_t *dp)
+int grab(caca_canvas_t *cv, caca_display_t *dp, int img_width, int img_height)
 {
   struct v4l2_format fmt;
   struct v4l2_buffer buf;
@@ -175,7 +177,11 @@ int grab(caca_canvas_t *cv, caca_display_t *dp)
   void *export;
   char *format = NULL;
   size_t len;
-  unsigned int cols = 0, lines = 0, font_width = 6, font_height = 10;
+  unsigned int font_width = 6, font_height = 10;
+  float aspect_ratio = ((float)img_width / (float)img_height) * ((float)font_height / font_width);
+  unsigned int lines = caca_get_canvas_height(cv);
+  unsigned int cols = (unsigned int)(aspect_ratio * (float)lines);
+
   //char *format = NULL;
   char *dither = NULL;
   float gamma = -1, brightness = -1, contrast = -1;
@@ -192,8 +198,8 @@ int grab(caca_canvas_t *cv, caca_display_t *dp)
 
   CLEAR(fmt);
   fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  fmt.fmt.pix.width = 640;
-  fmt.fmt.pix.height = 480;
+  fmt.fmt.pix.width = img_width;
+  fmt.fmt.pix.height = img_height;
   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24; // The simplest 3-color channels 8bpp format
   fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
   xioctl(fd, VIDIOC_S_FMT, &fmt);
@@ -209,7 +215,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp)
   // Assume a 6×10 font
   if (!cols && !lines)
   {
-    cols = 60;
+    cols = font_width * font_height;
 //          lines = cols * im->h * font_width / im->w / font_height;
     lines = cols * fmt.fmt.pix.height * font_width / fmt.fmt.pix.width / font_height;
   }
@@ -360,12 +366,12 @@ int grab(caca_canvas_t *cv, caca_display_t *dp)
 
       // FIXME: Nice display margin:
       /*
-      // ------------------------------------------------------------------
-      caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
-      caca_draw_thin_box(cv, 1, 1, caca_get_canvas_width(cv) - 2, caca_get_canvas_height(cv) - 2);
-      caca_printf(cv, 4, 1, "[%i.%i FPS]----", 1000000 / caca_get_display_time(dp),
-                  (10000000 / caca_get_display_time(dp)) % 10);
-      // ------------------------------------------------------------------
+       // ------------------------------------------------------------------
+       caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+       caca_draw_thin_box(cv, 1, 1, caca_get_canvas_width(cv) - 2, caca_get_canvas_height(cv) - 2);
+       caca_printf(cv, 4, 1, "[%i.%i FPS]----", 1000000 / caca_get_display_time(dp),
+       (10000000 / caca_get_display_time(dp)) % 10);
+       // ------------------------------------------------------------------
        */
       caca_refresh_display(dp);
 
@@ -381,6 +387,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp)
     v4l2_munmap(buffers[i].start, buffers[i].length);
   v4l2_close(fd);
 
+  return 0;
 }
 
 void xioctl(int fh, int request, void *arg)
