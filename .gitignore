@@ -1,0 +1,10 @@
+.DS_Store
+*~
+*.gch
+*.o
+*.bak
+*.pgm
+doc
+.project
+.cproject
+Debug
