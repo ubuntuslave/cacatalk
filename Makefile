@@ -6,9 +6,9 @@
 #       make progname to make just progname
 
 CC         = gcc
-EXECS      =  cacatalk
+EXECS      =  cacatalk caca_sock_server
 # List only those who will be created as objects:
-OBJS       = src/common-image
+OBJS       = src/common_image src/caca_sock_client
 SRCS       = $(patsubst %, %.c, $(EXECS))
 OBJS_NAMES = $(patsubst %, %.o, $(OBJS))
 CFLAGS     =   -Wall -g
@@ -27,8 +27,14 @@ clean:
 cleanall:
 	\rm -rf core *.dSYM $(OBJS) $(EXECS)
 
+install: $(EXECS)
+	cp $(EXECS) ~/bin
+	
 $(OBJS): 
 	$(CC) -c $(ALLFLAGS) $@.c $(LDFLAGS) -o $@.o
 	
-cacatalk: src/grabber.c $(OBJS_NAMES)
+cacatalk: include/cacatalk_common.h src/grabber.c $(OBJS_NAMES)
 	$(CC) $(ALLFLAGS) $(OBJS_NAMES) src/grabber.c $(LDFLAGS) -o $@
+
+caca_sock_server: src/caca_sock_server.c
+	$(CC) $(ALLFLAGS) src/caca_sock_server.c -o $@

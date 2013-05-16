@@ -10,6 +10,9 @@
  *  http://www.wtfpl.net/ for more details.
  */
 
+#ifndef COMMON_IMAGE_H_
+#define COMMON_IMAGE_H_
+
 #include <linux/videodev2.h>
 #include <libv4l2.h>
 #include <caca.h>
@@ -31,3 +34,4 @@ struct image
 extern struct image * load_image_from_V4L_buffer(struct v4l2_format * fmt, struct buffer * buf, int bytesused);
 extern void unload_image(struct image *);
 
+#endif // COMMON_IMAGE_H_

@@ -15,7 +15,7 @@
 #   include <stdlib.h>
 #endif
 
-#include "common-image.h"
+#include "common_image.h"
 
 struct image * load_image_from_V4L_buffer(struct v4l2_format * fmt, struct buffer * buf, int bytesused)
 {

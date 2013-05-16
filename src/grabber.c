@@ -29,12 +29,14 @@
 #include <sys/mman.h>
 #include <linux/videodev2.h>
 #include <libv4l2.h>
-#include <caca.h>
 
-#include "common-image.h"
+#include "cacatalk_common.h"
+#include "common_image.h"
+#include "caca_socket.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd);
 int grab(caca_canvas_t *cv, caca_display_t *dp, int img_width, int img_height);
 
 void xioctl(int fh, int request, void *arg);
@@ -47,6 +49,20 @@ int main(int argc, char **argv)
   caca_display_t *dp;
   int img_width = 640;
   int img_height = 480;
+
+  // ----------------------------------------------------------------------
+  // -------   Socket related:  -------------------------------------------
+  int sockfd;
+  char ip_name[256] = "";
+  char recvline[MAXLINE]; // receives data from socket
+  char sendline[MAXLINE]; // sends data to socket
+  // Check if there is a host name on command line; if not use default
+  if (argc > 1)
+  {
+    strcpy(ip_name, argv[1]);
+    sockfd = connect_to_peer_socket(ip_name);
+  }
+  // ----------------------------------------------------------------------
 
 //  cv = caca_create_canvas(80, 24);
   cv = caca_create_canvas(0, 0);
@@ -87,6 +103,7 @@ int main(int argc, char **argv)
   while (!quit)
   {
     caca_event_t ev;
+    int key_choice; // The key pressed to be switched upon
 //    int menu = 0, mouse = 0, xmouse = 0, ymouse = 0; // TODO
 
     while (caca_get_event(dp, CACA_EVENT_ANY, &ev, 0))
@@ -98,7 +115,8 @@ int main(int argc, char **argv)
       }
       else if (caca_get_event_type(&ev) & CACA_EVENT_KEY_PRESS)
       {
-        switch (caca_get_event_key_ch(&ev))
+        key_choice = caca_get_event_key_ch(&ev);
+        switch (key_choice)
         {
           case 'q':
           case 'Q':
@@ -108,7 +126,13 @@ int main(int argc, char **argv)
             break;
           case 'v':
           case 'V':
+            key_choice = 'v';
             demo = grab;
+            break;
+          case 'c':
+          case 'C':
+            key_choice = 'c';
+            demo = chat;
             break;
         }
 
@@ -136,7 +160,11 @@ int main(int argc, char **argv)
 
     if (demo)
     {
-      demo(cv, dp, img_width, img_height);
+      if(key_choice == 'v')
+        demo(cv, dp, img_width, img_height);
+
+      if(key_choice == 'c')
+        demo(cv, dp, sockfd);
 
       caca_clear_canvas(cv);
       caca_refresh_display(dp);
@@ -155,6 +183,133 @@ int main(int argc, char **argv)
 // Clean up caca
   caca_free_display(dp);
   caca_free_canvas(cv);
+
+  return 0;
+}
+
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
+{
+  textentry entries[TEXT_ENTRIES];
+  char * sendline; // Buffer to send through socket
+  char * recline;  // Buffer to receive from socket
+  unsigned int i, e = 0, running = 1;
+
+  caca_set_cursor(dp, 1);
+
+  caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
+  caca_put_str(cv, 1, 1, "Text entries - press tab to cycle");
+
+  for (i = 0; i < TEXT_ENTRIES; i++)
+  {
+    entries[i].buffer[0] = 0;
+    entries[i].size = 0;
+    entries[i].cursor = 0;
+    entries[i].changed = 1;
+    caca_printf(cv, 3, 3 * i + 4, "[entry %i]", i + 1);
+  }
+
+  while (running)
+  {
+    caca_event_t ev;
+
+    for (i = 0; i < TEXT_ENTRIES; i++)
+    {
+      unsigned int j, start, size;
+
+      if (!entries[i].changed)
+        continue;
+
+      caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+      caca_fill_box(cv, 2, 3 * i + 5, BUFFER_SIZE + 1, 1, ' ');
+
+      start = 0;
+      size = entries[i].size;
+
+      for (j = 0; j < size; j++)
+      {
+        caca_put_char(cv, 2 + j, 3 * i + 5, entries[i].buffer[start + j]);
+      }
+
+      entries[i].changed = 0;
+    }
+
+    /* Put the cursor on the active textentry */
+    caca_gotoxy(cv, 2 + entries[e].cursor, 3 * e + 5);
+
+    caca_refresh_display(dp);
+
+    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
+      continue;
+
+    switch (caca_get_event_key_ch(&ev))
+    {
+      case CACA_KEY_ESCAPE:
+        running = 0;
+        break;
+      case CACA_KEY_TAB:
+      case CACA_KEY_RETURN:
+        // Send line through socket
+        sendline = malloc(entries[e].size+1);
+        recline = malloc(MAXLINE);
+
+        memset(sendline, 0, entries[e].size);
+        memset(recline, MAXLINE, sizeof(char));
+        int j;
+        for (j = 0; j < entries[e].size; j++)
+        {
+          sendline[j] = (char) entries[e].buffer[j];
+        }
+        sendline[j] = '\0'; // Null character terminated string
+        send_receive_data_through_socket(sockfd, sendline, recline);
+
+        e = (e + 1) % TEXT_ENTRIES; // Switch to next line
+        break;
+      case CACA_KEY_HOME:
+        entries[e].cursor = 0;
+        break;
+      case CACA_KEY_END:
+        entries[e].cursor = entries[e].size;
+        break;
+      case CACA_KEY_LEFT:
+        if (entries[e].cursor)
+          entries[e].cursor--;
+        break;
+      case CACA_KEY_RIGHT:
+        if (entries[e].cursor < entries[e].size)
+          entries[e].cursor++;
+        break;
+      case CACA_KEY_DELETE:
+        if (entries[e].cursor < entries[e].size)
+        {
+          memmove(entries[e].buffer + entries[e].cursor, entries[e].buffer + entries[e].cursor + 1,
+                  (entries[e].size - entries[e].cursor + 1) * 4);
+          entries[e].size--;
+          entries[e].changed = 1;
+        }
+        break;
+      case CACA_KEY_BACKSPACE:
+        if (entries[e].cursor)
+        {
+          memmove(entries[e].buffer + entries[e].cursor - 1, entries[e].buffer + entries[e].cursor,
+                  (entries[e].size - entries[e].cursor) * 4);
+          entries[e].size--;
+          entries[e].cursor--;
+          entries[e].changed = 1;
+        }
+        break;
+      default:
+        if (entries[e].size < BUFFER_SIZE)
+        {
+          memmove(entries[e].buffer + entries[e].cursor + 1, entries[e].buffer + entries[e].cursor,
+                  (entries[e].size - entries[e].cursor) * 4);
+          entries[e].buffer[entries[e].cursor] = caca_get_event_key_utf32(&ev);
+          entries[e].size++;
+          entries[e].cursor++;
+          entries[e].changed = 1;
+        }
+        break;
+    }
+  }
 
   return 0;
 }
