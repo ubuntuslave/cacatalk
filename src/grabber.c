@@ -170,7 +170,7 @@ int main(int argc, char **argv)
     if (demo)
     {
       if(key_choice == 'v')
-        demo(cv, dp, img_width, img_height);
+        demo(cv, dp, dev_name, img_width, img_height);
 
       if(key_choice == 'c')
         demo(cv, dp, sockfd);
@@ -334,7 +334,6 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
   struct timeval tv;
   int r, fd = -1;
   unsigned int i, n_buffers;
-  char *dev_name = "/dev/video0";
   struct buffer *buffers;
 
   //-----------------------------------------
