@@ -86,7 +86,7 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
     ERROR_EXIT("gethostbyname", 1);
   }
 
-  memset(server, 0, sizeof(server));
+  memset(server, 0, sizeof(*server));
   memcpy(&(server->sin_addr), SOCKADDR *host->h_addr_list, SIZE);
   server->sin_family = AF_INET;
   server->sin_port = PORT;
@@ -108,8 +108,10 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
  *
  * @return number of bytes sent through socket
  */
-int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline)
+//int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline)
+int send_receive_data_through_socket(int sockfd, char* sendline)
 {
+  /*
   int maxfd, n;
   fd_set readset;
   int stdin_eof = 0;
@@ -132,20 +134,17 @@ int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline
       }
     }
 
-    // Send data
-    if (FD_ISSET(fileno(stdin), &readset))
-    {
-      if (fgets(sendline, MAXLINE - 1, stdin) == NULL )
-      {
-        stdin_eof = 1;
-        shutdown(sockfd, SHUT_WR);
-        FD_CLR(fileno(stdin), &readset);
-        return -1;
-      }
-      // TODO: use flags, see Socket Data Options
-      return send(sockfd, sendline, strlen(sendline), 0); // send data
-    }
   }
-  return 0;
+  */
+  // Send data
+//    if (FD_ISSET(fileno(stdin), &readset))
+    if (sendline != NULL)
+    {
+      // TODO: use flags, see Socket Data Options
+//      return send(sockfd, sendline, strlen(sendline), 0); // TODO: use this insteat to send data
+      return write(sockfd, sendline, strlen(sendline));
+    }
+
+    return 0;
 }
 

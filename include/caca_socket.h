@@ -34,6 +34,7 @@
 #define  MAXLINE       4096
 
 int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server);
-int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline);
+//int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline);
+int send_receive_data_through_socket(int sockfd, char* sendline);
 
 #endif // CACA_SOCKET_H_

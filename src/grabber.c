@@ -66,10 +66,10 @@ int main(int argc, char **argv)
   // Check if there is a host name on command line; if not use default
   if (argc > 2)
   {
+    // FIXME: memory problem after closing the socket
     struct sockaddr_in server;
     strcpy(ip_name, argv[2]);
     sockfd = connect_to_peer_socket(ip_name, &server);
-    printf("Connected to FD: %d\n", sockfd);
   }
   // ----------------------------------------------------------------------
 
@@ -93,16 +93,7 @@ int main(int argc, char **argv)
 
   int usec = 40000; // The refresh delay in microseconds.
   caca_set_display_time(dp, usec);
-
-  /* Initialize data */
-#if 0
-  sprite = caca_load_sprite("caca.txt");
-  if(!sprite)
-  sprite = caca_load_sprite("examples/caca.txt");
-#endif
-
-  // Disable cursor */
-  caca_set_mouse(dp, 0);
+  caca_set_mouse(dp, 0);  // Disable cursor by default
 
   // Main menu //TODO
 //  display_menu();
@@ -175,7 +166,9 @@ int main(int argc, char **argv)
       if(key_choice == 'c')
         demo(cv, dp, sockfd);
 
+      caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
       caca_clear_canvas(cv);
+      caca_set_cursor(dp, 0); // Disable cursor
       caca_refresh_display(dp);
       demo = NULL;
       // TODO: add functionality
@@ -189,9 +182,12 @@ int main(int argc, char **argv)
     }
   }
 
+  printf("Nicely here\n");
 // Clean up caca
   caca_free_display(dp);
   caca_free_canvas(cv);
+
+  close(sockfd); // close socket
 
   return 0;
 }
@@ -199,8 +195,8 @@ int main(int argc, char **argv)
 int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
 {
   textentry entries[TEXT_ENTRIES];
-  char * sendline; // Buffer to send through socket
-  char * recline;  // Buffer to receive from socket
+  char * sendline = NULL; // Buffer to send through socket
+  char * recline = NULL;  // Buffer to receive from socket
   unsigned int i, e = 0, running = 1;
 
   caca_set_cursor(dp, 1);
@@ -254,26 +250,34 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
     {
       case CACA_KEY_ESCAPE:
         running = 0;
+        // Free string buffers
+        free(sendline);
+        free(recline);
         break;
       case CACA_KEY_TAB:
       case CACA_KEY_RETURN:
+      {
         // Send line through socket
-        /* FIXME
         sendline = malloc(entries[e].size+1);
-        recline = malloc(MAXLINE);
+//        recline = malloc(MAXLINE);
 
-        memset(sendline, 0, entries[e].size);
-        memset(recline, MAXLINE, sizeof(char));
+        memset(sendline, 0, entries[e].size+1);
+//        memset(recline, MAXLINE, sizeof(char));
+
         int j;
         for (j = 0; j < entries[e].size; j++)
         {
           sendline[j] = (char) entries[e].buffer[j];
         }
-        sendline[j] = '\0'; // Null character terminated string
-        send_receive_data_through_socket(sockfd, sendline, recline);
-        */
-        e = (e + 1) % TEXT_ENTRIES; // Switch to next line
+        sendline[j] = '\n'; // Null character terminated string
+
+        if(entries[e].size >0 && sendline != NULL)
+//          send_receive_data_through_socket(sockfd, sendline, recline);
+          send_receive_data_through_socket(sockfd, sendline);
+
+        e = (e + 1) % TEXT_ENTRIES; // Move to next line // TODO:put it back
         break;
+      }
       case CACA_KEY_HOME:
         entries[e].cursor = 0;
         break;
