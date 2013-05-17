@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
   // TODO: use getopt to pass arguments
   if(argc > 1)
-    strcpy(dev_name, argv[1]);
+    dev_name = argv[1];
   else
     dev_name = "/dev/video0";
 
