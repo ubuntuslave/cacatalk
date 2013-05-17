@@ -37,7 +37,7 @@
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd);
-int grab(caca_canvas_t *cv, caca_display_t *dp, int img_width, int img_height);
+int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height);
 
 void xioctl(int fh, int request, void *arg);
 
@@ -49,6 +49,13 @@ int main(int argc, char **argv)
   caca_display_t *dp;
   int img_width = 640;
   int img_height = 480;
+  char *dev_name;
+
+  // TODO: use getopt to pass arguments
+  if(argc > 1)
+    strcpy(dev_name, argv[1]);
+  else
+    dev_name = "/dev/video0";
 
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
@@ -57,34 +64,11 @@ int main(int argc, char **argv)
   char recvline[MAXLINE]; // receives data from socket
   char sendline[MAXLINE]; // sends data to socket
   // Check if there is a host name on command line; if not use default
-  if (argc > 1)
+  if (argc > 2)
   {
     struct sockaddr_in server;
-    strcpy(ip_name, argv[1]);
+    strcpy(ip_name, argv[2]);
     sockfd = connect_to_peer_socket(ip_name, &server);
-    /*
-    struct hostent *host;
-
-    if ((host = gethostbyname(ip_name)) == NULL )
-    {
-      ERROR_EXIT("gethostbyname", 1);
-    }
-
-    memset(&server, 0, sizeof(server));
-    memcpy(&server.sin_addr, SOCKADDR *host->h_addr_list, SIZE);
-    server.sin_family = AF_INET;
-    server.sin_port = PORT;
-
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-      ERROR_EXIT("socketcall failed", 1)
-    }
-
-    if (connect(sockfd, SOCKADDR &server, sizeof(server)) == -1)
-    {
-      ERROR_EXIT("connect call failed", 1);
-    }
-     */
     printf("Connected to FD: %d\n", sockfd);
   }
   // ----------------------------------------------------------------------
@@ -340,7 +324,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
   return 0;
 }
 
-int grab(caca_canvas_t *cv, caca_display_t *dp, int img_width, int img_height)
+int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height)
 {
   struct v4l2_format fmt;
   struct v4l2_buffer buf;
