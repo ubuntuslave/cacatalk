@@ -72,11 +72,11 @@
  *
  * @return socket file descriptor
  */
-int connect_to_peer_socket(const char* peer_hostname)
+int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server)
 {
   int sockfd;
   char ip_name[256] = "";
-  struct sockaddr_in server;
+//  struct sockaddr_in server;
   struct hostent *host;
 
   strcpy(ip_name, peer_hostname);
@@ -86,17 +86,17 @@ int connect_to_peer_socket(const char* peer_hostname)
     ERROR_EXIT("gethostbyname", 1);
   }
 
-  memset(&server, 0, sizeof(server));
-  memcpy(&server.sin_addr, SOCKADDR *host->h_addr_list, SIZE);
-  server.sin_family = AF_INET;
-  server.sin_port = PORT;
+  memset(server, 0, sizeof(server));
+  memcpy(&(server->sin_addr), SOCKADDR *host->h_addr_list, SIZE);
+  server->sin_family = AF_INET;
+  server->sin_port = PORT;
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
   {
     ERROR_EXIT("socketcall failed", 1)
   }
 
-  if (connect(sockfd, SOCKADDR &server, sizeof(server)) == -1)
+  if (connect(sockfd, SOCKADDR server, sizeof(*server)) == -1)
   {
     ERROR_EXIT("connect call failed", 1);
   }

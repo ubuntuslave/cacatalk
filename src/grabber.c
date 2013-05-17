@@ -59,9 +59,10 @@ int main(int argc, char **argv)
   // Check if there is a host name on command line; if not use default
   if (argc > 1)
   {
-    strcpy(ip_name, argv[1]);
-//    sockfd = connect_to_peer_socket(ip_name);
     struct sockaddr_in server;
+    strcpy(ip_name, argv[1]);
+    sockfd = connect_to_peer_socket(ip_name, &server);
+    /*
     struct hostent *host;
 
     if ((host = gethostbyname(ip_name)) == NULL )
@@ -83,7 +84,7 @@ int main(int argc, char **argv)
     {
       ERROR_EXIT("connect call failed", 1);
     }
-
+     */
     printf("Connected to FD: %d\n", sockfd);
   }
   // ----------------------------------------------------------------------
