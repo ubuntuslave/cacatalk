@@ -37,7 +37,7 @@
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd);
-int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height);
+int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
 
 void xioctl(int fh, int request, void *arg);
 
@@ -70,16 +70,17 @@ int main(int argc, char **argv)
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
   int sockfd;
-  char ip_name[256] = "";
+  char ip_name[256];
   char recvline[MAXLINE]; // receives data from socket
   char sendline[MAXLINE]; // sends data to socket
   // Check if there is a host name on command line; if not use default
-  if (argc > 2)
+  if (strlen(arg_opts->peer_name) > 0)
   {
-    // FIXME: memory problem after closing the socket
-    struct sockaddr_in server;
+    // Attention: needs to have static memory for server
+    static struct sockaddr_in server;
     strcpy(ip_name, arg_opts->peer_name);
-    sockfd = connect_to_peer_socket(ip_name, &server);
+    sockfd = connect_to_peer_socket(ip_name, &server); // FIXME: not using for now (debugging)
+
     char dummychar = getc(stdin); // TODO: Temp pause for debugging socket
   }
   // ----------------------------------------------------------------------
@@ -105,10 +106,12 @@ int main(int argc, char **argv)
   int usec = 40000; // The refresh delay in microseconds.
   caca_set_display_time(dp, usec);
   caca_set_mouse(dp, 0);  // Disable cursor by default
+  caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+  caca_clear_canvas(cv);
 
   // Main menu //TODO
 //  display_menu();
-//  caca_refresh_display(dp);
+  caca_refresh_display(dp);
 
   // Go (main loop)
   while (!quit)
@@ -149,8 +152,9 @@ int main(int argc, char **argv)
 
         if (demo)
         {
-          caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
-//                caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+//          caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
+//          caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+          caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
           caca_clear_canvas(cv);
         }
       }
@@ -172,12 +176,15 @@ int main(int argc, char **argv)
     if (demo)
     {
       if(key_choice == 'v')
-        demo(cv, dp, dev_name, img_width, img_height);
+        demo(cv, dp, dev_name, img_width, img_height, sockfd);
 
       if(key_choice == 'c')
         demo(cv, dp, sockfd);
 
-      caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
+//      caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
+//      caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+      caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+
       caca_clear_canvas(cv);
       caca_set_cursor(dp, 0); // Disable cursor
       caca_refresh_display(dp);
@@ -198,7 +205,7 @@ int main(int argc, char **argv)
   caca_free_display(dp);
   caca_free_canvas(cv);
 
-  close(sockfd); // close socket
+//  close(sockfd); // close socket
 
   return 0;
 }
@@ -257,21 +264,20 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
     if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
       continue;
 
+    // NOTE: memory allocation should not happen inside switch statement!
+    sendline = malloc(entries[e].size+2);
+    recline = malloc(MAXLINE);
+
     switch (caca_get_event_key_ch(&ev))
     {
       case CACA_KEY_ESCAPE:
         running = 0;
         // Free string buffers
-        free(sendline);
-        free(recline);
         break;
       case CACA_KEY_TAB:
       case CACA_KEY_RETURN:
       {
         // Send line through socket
-        sendline = malloc(entries[e].size+2);
-        recline = malloc(MAXLINE);
-
         memset(sendline, '\0', entries[e].size+2);
 
         int j;
@@ -283,9 +289,9 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
 
         if(entries[e].size >0 && sendline != NULL)
         {
-          int nahhh = send_receive_data_through_socket(sockfd, sendline, recline);
-          free(sendline); // Needs to clean buffer, otherwise it will keep sending
+          int nahhh = send_receive_data_through_socket(sockfd, sendline, recline, strlen(sendline));
         }
+
         e = (e + 1) % TEXT_ENTRIES; // Move to next line // TODO:put it back
         break;
       }
@@ -334,12 +340,16 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
         }
         break;
     }
+
+    // NOTE: memory handling should not happen inside switch statement!
+    free(sendline); // Release buffer memory
+    free(recline); // Release buffer memory
   }
 
   return 0;
 }
 
-int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height)
+int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd)
 {
   struct v4l2_format fmt;
   struct v4l2_buffer buf;
@@ -355,7 +365,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
   // caca test: from img2txt
   void *export;
   char *format = NULL;
-  size_t len;
+  size_t exported_bytes;
   unsigned int font_width = 6, font_height = 10;
   float aspect_ratio = ((float)img_width / (float)img_height) * ((float)font_height / font_width);
   unsigned int lines = caca_get_canvas_height(cv);
@@ -410,7 +420,6 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
   }
 
   caca_set_canvas_size(cv, cols, lines);
-//  caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT); //TODO delete
   // --------------------------------------------------------------------------------
 
   CLEAR(req);
@@ -477,7 +486,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
 
     if (!quit)
     {
-      do // FIXME: timing issues with key events from caca
+      do
       {
         FD_ZERO(&fds);
         FD_SET(fd, &fds);
@@ -529,19 +538,29 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
 
       //unload_image(im); // Enable it if using memcpy in the loading
 
-      // TODO: This is what needs to be sent through the socket
-      /*
-       export = caca_export_canvas_to_memory(cv, format ? format : "ansi", &len);
-       if (!export)
-       {
-       fprintf(stderr, "grab: Can't export to format '%s'\n", format);
-       }
-       else
-       {
-       fwrite(export, len, 1, stdout);
-       free(export);
-       }
-       */
+      // This is what needs to be sent through the socket
+//      export = caca_export_canvas_to_memory(cv, format ? format : "ansi", &exported_bytes);
+      export = caca_export_area_to_memory(cv, 0, 0, cols, lines, format ? format : "ansi", &exported_bytes);
+      if (!export)
+      {
+        fprintf(stderr, "grab: Can't export to format '%s'\n", format);
+      }
+      else
+      {
+//        fwrite(export, len, 1, stdout);
+        char * recvline;
+        int nahhh = send_receive_data_through_socket(sockfd, export, recvline, exported_bytes);
+
+        /* TODO: just for testing (delete later)
+        char sendline[MAXLINE];
+        memset(sendline, '\0', 6);
+        strcpy(sendline, "FUCK\n");
+        int nahhh = send_receive_data_through_socket(sockfd, sendline, recvline, strlen(sendline));
+        printf("Sending %d bytes of caca video\n", nahhh);
+        // fwrite(export, exported_bytes, 1, stdout);
+        */
+        free(export);
+      }
 
       // FIXME: Nice display margin:
       /*

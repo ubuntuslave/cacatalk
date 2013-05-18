@@ -163,7 +163,7 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
  *
  * @return number of bytes sent through socket
  */
-int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline)
+int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline, int send_bytes)
 {
   /*
   // Clear receive buffer
@@ -195,7 +195,7 @@ int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline
 
   */
 
-  int send_status = send(sockfd, sendline, strlen(sendline), 0); // TODO: use this instead to write data
+  int send_status = send(sockfd, sendline, send_bytes, 0); // TODO: use this instead to write data
 
 //  if (select(maxfd, &readset, NULL, NULL, NULL ) == 0)
 //  if (select(maxfd, &readset, NULL, NULL, &tv ) == 0)
@@ -247,6 +247,6 @@ int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline
 //  else
 //    return -1; // -1 implies failure
 
-  return 0; // 0 Implies success
+  return send_status; // 0 Implies success
 }
 

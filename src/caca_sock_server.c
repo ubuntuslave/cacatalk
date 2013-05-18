@@ -29,7 +29,7 @@ Sigfunc* Signal(int signo, Sigfunc *func);
 void on_sigchld(int signo);
 void str_receive(int sockfd);
 
-int mainDISABLED(int argc, char **argv)
+int main(int argc, char **argv)
 {
   int listenfd, connfd;
   pid_t childpid;
@@ -96,7 +96,8 @@ void str_receive(int sockfd)
       return; /* connection closed by other end */
 
     recvline[n] = '\0';
-    fputs(recvline, stdout);
+    fwrite(recvline, n, 1, stdout);
+    //fputs(recvline, stdout);
 
     //write(sockfd, recvline, n); // TODO:send back stuff
   }

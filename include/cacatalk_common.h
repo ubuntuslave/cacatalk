@@ -52,7 +52,7 @@ int get_options(int argc, char **argv, options * opt)
     memset(opt->peer_name, '\0', MAXHOSTNAMELEN);
     opt->is_server = 0; // Socket client is the default behavior
 
-    while ((c = getopt(argc, argv, "sv:p:")) != -1)
+    while ((c = getopt(argc, argv, "sv:p:")) != -1) // The ":" next to a flag indicates to expect a value
     {
       switch (c)
       {
