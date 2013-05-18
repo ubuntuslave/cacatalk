@@ -29,7 +29,7 @@ Sigfunc* Signal(int signo, Sigfunc *func);
 void on_sigchld(int signo);
 void str_receive(int sockfd);
 
-int main(int argc, char **argv)
+int mainDISABLED(int argc, char **argv)
 {
   int listenfd, connfd;
   pid_t childpid;

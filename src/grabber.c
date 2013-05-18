@@ -49,13 +49,23 @@ int main(int argc, char **argv)
   caca_display_t *dp;
   int img_width = 640;
   int img_height = 480;
-  char *dev_name;
+  char * dev_name;
+  int is_server = 0;
+  options *arg_opts;
+  arg_opts = (options *) malloc(sizeof(options));
 
-  // TODO: use getopt to pass arguments
-  if(argc > 1)
-    dev_name = argv[1];
+  if(get_options(argc, argv, arg_opts) == -1)
+  {
+    fprintf(stderr, "%s: unable to get option arguments\n", argv[0]);
+    return 1;
+  }
+
+  dev_name = arg_opts->video_device_name;
+  is_server = arg_opts->is_server;
+  if(is_server)
+    printf("Running in server mode\n");
   else
-    dev_name = "/dev/video0";
+    printf("Running in client mode\n");
 
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
@@ -68,7 +78,7 @@ int main(int argc, char **argv)
   {
     // FIXME: memory problem after closing the socket
     struct sockaddr_in server;
-    strcpy(ip_name, argv[2]);
+    strcpy(ip_name, arg_opts->peer_name);
     sockfd = connect_to_peer_socket(ip_name, &server);
     char dummychar = getc(stdin); // TODO: Temp pause for debugging socket
   }
