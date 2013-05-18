@@ -62,11 +62,47 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/param.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <netdb.h>
 
 #include "caca_socket.h"
 
 #define  MAXFD( _x, _y)  ((_x)>(_y)?(_x):(_y))
+
+void print_IP_addresses()
+{
+  // This only produces the localhost address
+  //printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *) client_as_host->h_addr_list[0])));
+  // Solution to obtain interface address(es):
+  struct ifaddrs * if_addr_struct = NULL;
+  struct ifaddrs * if_addr_ptr = NULL;
+  void * tmp_addr_ptr = NULL;
+  getifaddrs(&if_addr_struct);
+  for (if_addr_ptr = if_addr_struct; if_addr_ptr != NULL ; if_addr_ptr = if_addr_ptr->ifa_next)
+  {
+    if (if_addr_ptr->ifa_addr->sa_family == AF_INET) // check it is IP4
+    { // is a valid IP4 Address
+      tmp_addr_ptr = &((struct sockaddr_in *)if_addr_ptr->ifa_addr)->sin_addr;
+      char address_buffer_v4[INET_ADDRSTRLEN];
+      // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
+      inet_ntop(AF_INET, tmp_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
+      printf("%s IPv4 Address = %s\n", if_addr_ptr->ifa_name, address_buffer_v4);
+    }
+    else if (if_addr_ptr->ifa_addr->sa_family == AF_INET6) // check it is IP6
+    { // is a valid IP6 Address
+      tmp_addr_ptr = &((struct sockaddr_in6 *)if_addr_ptr->ifa_addr)->sin6_addr;
+      char address_buffer_v6[INET6_ADDRSTRLEN];
+      // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
+      inet_ntop(AF_INET6, tmp_addr_ptr, address_buffer_v6, INET6_ADDRSTRLEN);
+      printf("%s IPv6 Address = %s\n", if_addr_ptr->ifa_name, address_buffer_v6);
+    }
+  }
+  // Free memory
+  if (if_addr_struct != NULL )
+    freeifaddrs(if_addr_struct);
+}
 
 /** TODO: description
  *
@@ -76,18 +112,37 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
 {
   int sockfd;
   char ip_name[256] = "";
+  char my_host_name[MAXHOSTNAMELEN] = "";
 //  struct sockaddr_in server;
-  struct hostent *host;
+  struct hostent *client_as_host;
+  struct hostent *server_as_host;
 
   strcpy(ip_name, peer_hostname);
 
-  if ((host = gethostbyname(ip_name)) == NULL )
+  if(gethostname(my_host_name, MAXHOSTNAMELEN) == 0 )
+  {
+    if ((client_as_host = ( struct hostent * ) gethostbyname(my_host_name)) == NULL )
+    {
+      ERROR_EXIT("gethostbyname", 1);
+    }
+    else
+    {
+      printf ( "hostname (self): %s\n" , client_as_host->h_name );
+      // This only produces the localhost address
+      //printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *) client_as_host->h_addr_list[0])));
+
+      // Solution to obtain interface address(es):
+      print_IP_addresses();
+    }
+  }
+
+  if ((server_as_host = gethostbyname(ip_name)) == NULL )
   {
     ERROR_EXIT("gethostbyname", 1);
   }
 
   memset(server, 0, sizeof(*server));
-  memcpy(&(server->sin_addr), SOCKADDR *host->h_addr_list, SIZE);
+  memcpy(&(server->sin_addr), SOCKADDR *server_as_host->h_addr_list, SIZE);
   server->sin_family = AF_INET;
   server->sin_port = PORT;
 
@@ -108,24 +163,47 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
  *
  * @return number of bytes sent through socket
  */
-//int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline)
-int send_receive_data_through_socket(int sockfd, char* sendline)
+int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline)
 {
   /*
+  // Clear receive buffer
+  memset(recvline, '\0', MAXLINE);
+
   int maxfd, n;
   fd_set readset;
-  int stdin_eof = 0;
+  fd_set writeset;
+//  int stdin_eof = 0;
+  struct timeval tv;
+
+  // do socket initialization etc.
+
+  tv.tv_sec = 1;
+  tv.tv_usec = 500000;
+
+  // tv now represents 1.5 seconds
 
   maxfd = MAXFD(fileno(stdin), sockfd) + 1;
 
   FD_ZERO(&readset);
+  FD_ZERO(&writeset);
+
   if (stdin_eof == 0)
     FD_SET(fileno(stdin), &readset);
-  FD_SET(sockfd, &readset);
 
-  if (select(maxfd, &readset, NULL, NULL, NULL ) > 0)
+  FD_SET(sockfd, &readset);
+  FD_SET(sockfd, &writeset);
+
+  */
+
+  int send_status = send(sockfd, sendline, strlen(sendline), 0); // TODO: use this instead to write data
+
+//  if (select(maxfd, &readset, NULL, NULL, NULL ) == 0)
+//  if (select(maxfd, &readset, NULL, NULL, &tv ) == 0)
+//  if (select(maxfd, &readset, &writeset, NULL, 0 ) == 0)
+//  if (select(maxfd, NULL, &writeset, NULL, NULL ) == 0)
   {
     // Receive data
+    /*
     if (FD_ISSET(sockfd, &readset))
     {
       if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
@@ -133,18 +211,42 @@ int send_receive_data_through_socket(int sockfd, char* sendline)
         recvline[n] = '\0';
       }
     }
+    */
 
-  }
-  */
-  // Send data
-//    if (FD_ISSET(fileno(stdin), &readset))
-    if (sendline != NULL)
+    // Send data
+    /*
+    if ( FD_ISSET(fileno(stdin), &readset))
+//    if ( FD_ISSET(sockfd, &readset))
     {
-      // TODO: use flags, see Socket Data Options
-//      return send(sockfd, sendline, strlen(sendline), 0); // TODO: use this insteat to send data
-      return write(sockfd, sendline, strlen(sendline));
+          int send_status = send(sockfd, sendline, strlen(sendline), 0); // TODO: use this instead to write data
+          printf("sent %d bytes\n", send_status);
     }
+    */
+/*
+    //      if (FD_ISSET(sockfd, &writeset))
+      {
+        if (sendline != NULL)
+        {
+          //        write(sockfd, sendline, strlen(sendline));
+          int send_status = send(sockfd, sendline, strlen(sendline), 0); // TODO: use this instead to write data
+          if(send_status >= 0)
+          {
+            return send_status;
+          }
+          else // -1
+          {
+            //          stdin_eof = 1;
+            shutdown(sockfd, SHUT_WR);
+            FD_CLR(sockfd, &writeset);
+            return send_status;
+          }
+        }
+      }
+      */
+  }
+//  else
+//    return -1; // -1 implies failure
 
-    return 0;
+  return 0; // 0 Implies success
 }
 

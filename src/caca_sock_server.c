@@ -91,6 +91,7 @@ void str_receive(int sockfd)
 
   for (;;) // FIXME: don't put a loop like this
   {
+//    if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
     if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
       return; /* connection closed by other end */
 

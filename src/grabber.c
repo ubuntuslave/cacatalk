@@ -70,6 +70,7 @@ int main(int argc, char **argv)
     struct sockaddr_in server;
     strcpy(ip_name, argv[2]);
     sockfd = connect_to_peer_socket(ip_name, &server);
+    char dummychar = getc(stdin); // TODO: Temp pause for debugging socket
   }
   // ----------------------------------------------------------------------
 
@@ -258,11 +259,10 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
       case CACA_KEY_RETURN:
       {
         // Send line through socket
-        sendline = malloc(entries[e].size+1);
-//        recline = malloc(MAXLINE);
+        sendline = malloc(entries[e].size+2);
+        recline = malloc(MAXLINE);
 
-        memset(sendline, 0, entries[e].size+1);
-//        memset(recline, MAXLINE, sizeof(char));
+        memset(sendline, '\0', entries[e].size+2);
 
         int j;
         for (j = 0; j < entries[e].size; j++)
@@ -272,9 +272,10 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
         sendline[j] = '\n'; // Null character terminated string
 
         if(entries[e].size >0 && sendline != NULL)
-//          send_receive_data_through_socket(sockfd, sendline, recline);
-          send_receive_data_through_socket(sockfd, sendline);
-
+        {
+          int nahhh = send_receive_data_through_socket(sockfd, sendline, recline);
+          free(sendline); // Needs to clean buffer, otherwise it will keep sending
+        }
         e = (e + 1) % TEXT_ENTRIES; // Move to next line // TODO:put it back
         break;
       }
