@@ -36,13 +36,14 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd);
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win);
 int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
-
+void set_window(int fd, Window *win);
 void xioctl(int fh, int request, void *arg);
 
 int main(int argc, char **argv)
 {
+  Window win; // To store rows and colums of the terminal
   void (*demo)(void * arg1, ...) = NULL;
   int quit = 0;
   caca_canvas_t *cv;
@@ -66,6 +67,8 @@ int main(int argc, char **argv)
     printf("Running in server mode\n");
   else
     printf("Running in client mode\n");
+
+  set_window(STDIN_FILENO, &win);
 
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
@@ -179,7 +182,7 @@ int main(int argc, char **argv)
         demo(cv, dp, dev_name, img_width, img_height, sockfd);
 
       if(key_choice == 'c')
-        demo(cv, dp, sockfd);
+        demo(cv, dp, sockfd, &win);
 
 //      caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
 //      caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
@@ -205,22 +208,24 @@ int main(int argc, char **argv)
   caca_free_display(dp);
   caca_free_canvas(cv);
 
-//  close(sockfd); // close socket
+  close(sockfd); // close socket
 
   return 0;
 }
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
 {
   textentry entries[TEXT_ENTRIES];
   char * sendline = NULL; // Buffer to send through socket
   char * recline = NULL;  // Buffer to receive from socket
-  unsigned int i, e = 0, running = 1;
+  unsigned int i, e = TEXT_ENTRIES-1, running = 1;
+  unsigned int newline_entered = 1; // Indicates when the return key has been pressed
+  int text_buffer_size = (MIN(win->cols, BUFFER_SIZE)) - 2; // Leave padding (margin)
 
   caca_set_cursor(dp, 1);
 
   caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
-  caca_put_str(cv, 1, 1, "Text entries - press tab to cycle");
+  caca_put_str(cv, 1, 1, "Text chat (self) - press: Enter to send || Escape to stop");
 
   for (i = 0; i < TEXT_ENTRIES; i++)
   {
@@ -228,36 +233,63 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
     entries[i].size = 0;
     entries[i].cursor = 0;
     entries[i].changed = 1;
-    caca_printf(cv, 3, 3 * i + 4, "[entry %i]", i + 1);
   }
 
   while (running)
   {
     caca_event_t ev;
 
-    for (i = 0; i < TEXT_ENTRIES; i++)
+    unsigned int j, start, size;
+    if(newline_entered == 1)
     {
-      unsigned int j, start, size;
-
-      if (!entries[i].changed)
-        continue;
-
-      caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
-      caca_fill_box(cv, 2, 3 * i + 5, BUFFER_SIZE + 1, 1, ' ');
-
-      start = 0;
-      size = entries[i].size;
-
-      for (j = 0; j < size; j++)
+      for (i = 0; i < TEXT_ENTRIES-1; i++)
       {
-        caca_put_char(cv, 2 + j, 3 * i + 5, entries[i].buffer[start + j]);
+
+        caca_set_color_ansi(cv, CACA_BLACK, CACA_CONIO_CYAN);
+        caca_fill_box(cv, 1, i + 2, text_buffer_size, 1, ' ');
+
+        // Clear top line and put contents from line below:
+        memset(entries[i].buffer, '\0', entries[i].size* 4); // *4 because using uint32_t
+        memmove(entries[i].buffer, entries[i+1].buffer, (entries[i+1].size) * 4);
+        entries[i].size = entries[i+1].size;
+        entries[i].cursor = 0;
+
+        start = 0;
+        size = entries[i].size;
+
+        for (j = 0; j < size; j++)
+        {
+          caca_put_char(cv, 1+j, i + 2, entries[i].buffer[start + j]);
+        }
+        entries[i].changed = 0;
       }
-
-      entries[i].changed = 0;
+      // Reset editable textbox (last line)
+      caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
+      caca_fill_box(cv, 1, i + 2, text_buffer_size, 1, ' ');
+      memset(entries[i].buffer, '\0', BUFFER_SIZE);
+      entries[i].size = 0;
+      entries[i].cursor = 0;
     }
+    else // Only update last line if changed
+    {
+      if(entries[e].changed == 1)
+      {
+        caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
+        caca_fill_box(cv, 1, e + 2, text_buffer_size, 1, ' ');
 
-    /* Put the cursor on the active textentry */
-    caca_gotoxy(cv, 2 + entries[e].cursor, 3 * e + 5);
+        start = 0;
+        size = entries[e].size;
+        for (j = 0; j < size; j++)
+        {
+          caca_put_char(cv, 1+j, e + 2, entries[e].buffer[start + j]);
+        }
+      }
+    }
+    entries[e].changed = 0;
+    newline_entered = 0; // always reset flag
+
+    // Put the cursor on the active textentry
+    caca_gotoxy(cv, 1 + entries[e].cursor, e + 2);
 
     caca_refresh_display(dp);
 
@@ -274,7 +306,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
         running = 0;
         // Free string buffers
         break;
-      case CACA_KEY_TAB:
+      //case CACA_KEY_TAB:
       case CACA_KEY_RETURN:
       {
         // Send line through socket
@@ -292,7 +324,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd)
           int nahhh = send_receive_data_through_socket(sockfd, sendline, recline, strlen(sendline));
         }
 
-        e = (e + 1) % TEXT_ENTRIES; // Move to next line // TODO:put it back
+        newline_entered = 1;
+        entries[e].changed = 1;
         break;
       }
       case CACA_KEY_HOME:
@@ -604,3 +637,15 @@ void xioctl(int fh, int request, void *arg)
   }
 }
 
+void set_window(int fd, Window *win)
+{
+  struct winsize size;
+
+  if (ioctl(fd, TIOCGWINSZ, &size) < 0)
+    {
+      perror("TIOCGWINSZ error");
+      return;
+    }
+  win->rows = size.ws_row;
+  win->cols = size.ws_col;
+}

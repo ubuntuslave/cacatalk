@@ -16,7 +16,7 @@
 #include <sys/param.h>
 #include "caca.h"
 
-#define BUFFER_SIZE 75
+#define BUFFER_SIZE MAX_INPUT
 #define TEXT_ENTRIES 5
 
 typedef struct textentry
@@ -24,6 +24,20 @@ typedef struct textentry
   uint32_t buffer[BUFFER_SIZE + 1];
   unsigned int size, cursor, changed;
 } textentry;
+
+/** @brief
+ A Window structure encapsulates the dimensions of the window and the
+ amount by which the text within it has been scrolled. The  line_at_top
+ member is the lowest index of all lines in the text buffer that is currently
+ visible in the window, i.e., the index of the top line on the screen.
+ Only complete lines are displayed, so line_at_top is the index of the
+ line whose entire contents are visible.
+ */
+typedef struct _window
+{
+  unsigned short rows;
+  unsigned short cols;
+} Window;
 
 typedef struct options_s
 {
