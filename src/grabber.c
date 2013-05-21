@@ -281,24 +281,48 @@ int main(int argc, char **argv)
 
 int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
 {
-  textentry entries[TEXT_ENTRIES];
+  textentry entries_self[TEXT_ENTRIES];
+  textentry entries_peer[TEXT_ENTRIES];
+  char label_name_of_peer[MAXHOSTNAMELEN];
   char * sendline = NULL; // Buffer to send through socket
   char * recline = NULL; // Buffer to receive from socket
   unsigned int i, e = TEXT_ENTRIES - 1, running = 1;
+  unsigned int new_peer_entry_bytes = 0; // Indicates when the size of a new peer line entry
   unsigned int newline_entered = 1; // Indicates when the return key has been pressed
+  unsigned int first_time = 1; // Indicates when we are here for the first time
   int text_buffer_size = (MIN(win->cols, BUFFER_SIZE)) - 2; // Leave padding (margin)
-
+  unsigned int row_offset_peer = 1;
+  unsigned int row_offset_self = row_offset_peer+TEXT_ENTRIES+1;
+  unsigned int col_offset = 1;
+  char * peer_username = "test_peer"; // TODO obtain the info
+  char * peer_hostname = "whatever.com";  // TODO
   caca_set_cursor(dp, 1);
 
   caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
-  caca_put_str(cv, 1, 1, "Text chat (self) - press: Enter to send || Escape to stop");
+  sprintf(label_name_of_peer, "%s@%s", peer_username, peer_hostname);
+  caca_fill_box(cv, col_offset, row_offset_peer, text_buffer_size, 1, ' ');
+  caca_fill_box(cv, col_offset, row_offset_self, text_buffer_size, 1, ' ');
+  caca_put_str(cv, col_offset, row_offset_peer, label_name_of_peer);
+  caca_put_str(cv, col_offset, row_offset_self, "Text chat (self) - press: Enter to send || Escape to stop");
+
+  // NOTE: memory allocation should not happen inside switch statement!
+  sendline = malloc(MAXLINE);
+  recline = malloc(MAXLINE);
+
+  row_offset_peer++;
+  row_offset_self++;
 
   for (i = 0; i < TEXT_ENTRIES; i++)
   {
-    entries[i].buffer[0] = 0;
-    entries[i].size = 0;
-    entries[i].cursor = 0;
-    entries[i].changed = 1;
+    entries_peer[i].buffer[0] = 0;
+    entries_peer[i].size = 0;
+    entries_peer[i].cursor = 0;
+    entries_peer[i].changed = 1;
+
+    entries_self[i].buffer[0] = 0;
+    entries_self[i].size = 0;
+    entries_self[i].cursor = 0;
+    entries_self[i].changed = 1;
   }
 
   while (running)
@@ -306,65 +330,112 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
     caca_event_t ev;
 
     unsigned int j, start, size;
+
+    memset(recline, '\0', MAXLINE);
+    if(sockfd >0)
+      new_peer_entry_bytes = recv(sockfd, recline, MAXLINE - 1, 0); // FIXME
+
+    // Update peer entries
+    if(new_peer_entry_bytes > 0 || first_time == 1)
+    {
+      first_time = 0; // Reset flag
+      for (i = 0; i < TEXT_ENTRIES-1; i++)
+      {
+        caca_set_color_ansi(cv, CACA_BLACK, CACA_MAGENTA);
+        caca_fill_box(cv, col_offset, i + row_offset_peer, text_buffer_size, 1, ' ');
+
+        // Clear top line and put contents from line below:
+        memset(entries_peer[i].buffer, '\0', entries_peer[i].size * 4); // *4 because using uint32_t
+        memmove(entries_peer[i].buffer, entries_peer[i + 1].buffer, (entries_peer[i + 1].size) * 4);
+        entries_peer[i].size = entries_peer[i + 1].size;
+        entries_peer[i].cursor = 0;
+
+        start = 0;
+        size = entries_peer[i].size;
+
+        for (j = 0; j < size; j++)
+        {
+          caca_put_char(cv, col_offset + j, i + row_offset_peer, entries_peer[i].buffer[start + j]);
+        }
+        entries_peer[i].changed = 0;
+      }
+      caca_fill_box(cv, col_offset, e + row_offset_peer, text_buffer_size, 1, ' ');
+      start = 0;
+      entries_peer[e].size = new_peer_entry_bytes;
+      // TEST
+      /*
+      strcpy(recline, "test\0");
+      entries_peer[e].size = strlen(recline);
+      */
+      // ---------------------------
+
+      entries_peer[e].cursor = 0;
+      size = entries_peer[e].size;
+      for (j = 0; j < size; j++)
+      {
+        entries_peer[e].buffer[start + j] = (uint32_t) recline[start + j];
+        caca_put_char(cv, col_offset + j, e + row_offset_peer, entries_peer[e].buffer[start + j]);
+      }
+
+    }
+
+    // Update self entries
     if (newline_entered == 1)
     {
       for (i = 0; i < TEXT_ENTRIES - 1; i++)
       {
 
         caca_set_color_ansi(cv, CACA_BLACK, CACA_CONIO_CYAN);
-        caca_fill_box(cv, 1, i + 2, text_buffer_size, 1, ' ');
+        caca_fill_box(cv, col_offset, i + row_offset_self, text_buffer_size, 1, ' ');
 
         // Clear top line and put contents from line below:
-        memset(entries[i].buffer, '\0', entries[i].size * 4); // *4 because using uint32_t
-        memmove(entries[i].buffer, entries[i + 1].buffer, (entries[i + 1].size) * 4);
-        entries[i].size = entries[i + 1].size;
-        entries[i].cursor = 0;
+        memset(entries_self[i].buffer, '\0', entries_self[i].size * 4); // *4 because using uint32_t
+        memmove(entries_self[i].buffer, entries_self[i + 1].buffer, (entries_self[i + 1].size) * 4);
+        entries_self[i].size = entries_self[i + 1].size;
+        entries_self[i].cursor = 0;
 
         start = 0;
-        size = entries[i].size;
+        size = entries_self[i].size;
 
         for (j = 0; j < size; j++)
         {
-          caca_put_char(cv, 1 + j, i + 2, entries[i].buffer[start + j]);
+          caca_put_char(cv, col_offset + j, i + row_offset_self, entries_self[i].buffer[start + j]);
         }
-        entries[i].changed = 0;
+        entries_self[i].changed = 0;
       }
       // Reset editable textbox (last line)
       caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
-      caca_fill_box(cv, 1, i + 2, text_buffer_size, 1, ' ');
-      memset(entries[i].buffer, '\0', BUFFER_SIZE);
-      entries[i].size = 0;
-      entries[i].cursor = 0;
+      caca_fill_box(cv, col_offset, i + row_offset_self, text_buffer_size, 1, ' ');
+      memset(entries_self[i].buffer, '\0', BUFFER_SIZE);
+      entries_self[i].size = 0;
+      entries_self[i].cursor = 0;
     }
     else // Only update last line if changed
     {
-      if (entries[e].changed == 1)
+      if (entries_self[e].changed == 1)
       {
         caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
-        caca_fill_box(cv, 1, e + 2, text_buffer_size, 1, ' ');
+        caca_fill_box(cv, col_offset, e + row_offset_self, text_buffer_size, 1, ' ');
 
         start = 0;
-        size = entries[e].size;
+        size = entries_self[e].size;
         for (j = 0; j < size; j++)
         {
-          caca_put_char(cv, 1 + j, e + 2, entries[e].buffer[start + j]);
+          caca_put_char(cv, col_offset + j, e + row_offset_self, entries_self[e].buffer[start + j]);
         }
       }
     }
-    entries[e].changed = 0;
+    entries_self[e].changed = 0;
     newline_entered = 0; // always reset flag
+    new_peer_entry_bytes = 0;  // always reset (because we must have handled the entry already)
 
     // Put the cursor on the active textentry
-    caca_gotoxy(cv, 1 + entries[e].cursor, e + 2);
+    caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
 
     caca_refresh_display(dp);
 
     if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
       continue;
-
-    // NOTE: memory allocation should not happen inside switch statement!
-    sendline = malloc(entries[e].size + 2);
-    recline = malloc(MAXLINE);
 
     switch (caca_get_event_key_ch(&ev))
     {
@@ -376,75 +447,75 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
       case CACA_KEY_RETURN:
       {
         // Send line through socket
-        memset(sendline, '\0', entries[e].size + 2);
+        memset(sendline, '\0', entries_self[e].size + 1);
 
         int j;
-        for (j = 0; j < entries[e].size; j++)
+        for (j = 0; j < entries_self[e].size; j++)
         {
-          sendline[j] = (char)entries[e].buffer[j];
+          sendline[j] = (char)entries_self[e].buffer[j];
         }
-        sendline[j] = '\n'; // Null character terminated string
+//        sendline[j] = '\n'; // Null character terminated string
 
-        if (entries[e].size > 0 && sendline != NULL )
+        if (entries_self[e].size > 0 && sendline != NULL )
         {
-//          int nahhh = send_receive_data_through_socket(sockfd, sendline, recline, strlen(sendline));
           int send_status = send(sockfd, sendline, strlen(sendline), 0);
         }
 
         newline_entered = 1;
-        entries[e].changed = 1;
+        entries_self[e].changed = 1;
         break;
       }
       case CACA_KEY_HOME:
-        entries[e].cursor = 0;
+        entries_self[e].cursor = 0;
         break;
       case CACA_KEY_END:
-        entries[e].cursor = entries[e].size;
+        entries_self[e].cursor = entries_self[e].size;
         break;
       case CACA_KEY_LEFT:
-        if (entries[e].cursor)
-          entries[e].cursor--;
+        if (entries_self[e].cursor)
+          entries_self[e].cursor--;
         break;
       case CACA_KEY_RIGHT:
-        if (entries[e].cursor < entries[e].size)
-          entries[e].cursor++;
+        if (entries_self[e].cursor < entries_self[e].size)
+          entries_self[e].cursor++;
         break;
       case CACA_KEY_DELETE:
-        if (entries[e].cursor < entries[e].size)
+        if (entries_self[e].cursor < entries_self[e].size)
         {
-          memmove(entries[e].buffer + entries[e].cursor, entries[e].buffer + entries[e].cursor + 1,
-                  (entries[e].size - entries[e].cursor + 1) * 4);
-          entries[e].size--;
-          entries[e].changed = 1;
+          memmove(entries_self[e].buffer + entries_self[e].cursor, entries_self[e].buffer + entries_self[e].cursor + 1,
+                  (entries_self[e].size - entries_self[e].cursor + 1) * 4);
+          entries_self[e].size--;
+          entries_self[e].changed = 1;
         }
         break;
       case CACA_KEY_BACKSPACE:
-        if (entries[e].cursor)
+        if (entries_self[e].cursor)
         {
-          memmove(entries[e].buffer + entries[e].cursor - 1, entries[e].buffer + entries[e].cursor,
-                  (entries[e].size - entries[e].cursor) * 4);
-          entries[e].size--;
-          entries[e].cursor--;
-          entries[e].changed = 1;
+          memmove(entries_self[e].buffer + entries_self[e].cursor - 1, entries_self[e].buffer + entries_self[e].cursor,
+                  (entries_self[e].size - entries_self[e].cursor) * 4);
+          entries_self[e].size--;
+          entries_self[e].cursor--;
+          entries_self[e].changed = 1;
         }
         break;
       default:
-        if (entries[e].size < BUFFER_SIZE)
+        if (entries_self[e].size < BUFFER_SIZE)
         {
-          memmove(entries[e].buffer + entries[e].cursor + 1, entries[e].buffer + entries[e].cursor,
-                  (entries[e].size - entries[e].cursor) * 4);
-          entries[e].buffer[entries[e].cursor] = caca_get_event_key_utf32(&ev);
-          entries[e].size++;
-          entries[e].cursor++;
-          entries[e].changed = 1;
+          memmove(entries_self[e].buffer + entries_self[e].cursor + 1, entries_self[e].buffer + entries_self[e].cursor,
+                  (entries_self[e].size - entries_self[e].cursor) * 4);
+          entries_self[e].buffer[entries_self[e].cursor] = caca_get_event_key_utf32(&ev);
+          entries_self[e].size++;
+          entries_self[e].cursor++;
+          entries_self[e].changed = 1;
         }
         break;
     }
 
-    // NOTE: memory handling should not happen inside switch statement!
-    free(sendline); // Release buffer memory
-    free(recline); // Release buffer memory
   }
+
+  // NOTE: memory handling should not happen inside switch statement!
+  free(sendline); // Release buffer memory
+  free(recline); // Release buffer memory
 
   return 0;
 }
