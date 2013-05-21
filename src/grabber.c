@@ -36,7 +36,7 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win);
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win, char * peer_hostname);
 int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
 void set_window(int fd, Window *win);
 void xioctl(int fh, int request, void *arg);
@@ -81,6 +81,7 @@ int main(int argc, char **argv)
   struct sockaddr_in client_addr_accepted, server_addr_that_listens;
   static struct sockaddr_in server_addr_to_connect;
   socklen_t clilen = sizeof(client_addr_accepted);
+  char address_buffer_v4[INET_ADDRSTRLEN];
   pid_t childpid;
   //void sig_chld(int);
 
@@ -95,7 +96,7 @@ int main(int argc, char **argv)
   bzero(&server_addr_that_listens, sizeof(server_addr_that_listens));
   server_addr_that_listens.sin_family = AF_INET;
   server_addr_that_listens.sin_addr.s_addr = htonl(INADDR_ANY );
-  server_addr_that_listens.sin_port = PORT;
+  server_addr_that_listens.sin_port = PORT_LISTEN;
 
   set_non_block(listenfd); // Set it as nonblocking descriptor (Not working)
 
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
               if (strlen(arg_opts->peer_name) > 0)
               {
                 // Attention: needs to have static memory for server
-                connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect);
+                connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect, PORT_CONNECT);
                 if(connfd > 0) // set nonblocking
                   set_non_block(connfd); // FIXME: check that it's working
               }
@@ -241,11 +242,10 @@ int main(int argc, char **argv)
             if (client_addr_accepted.sin_family == AF_INET) // check it is IP4
             { // is a valid IP4 Address
               peer_addr_ptr = (struct sockaddr_in *) &(client_addr_accepted.sin_addr);
-              char address_buffer_v4[INET_ADDRSTRLEN];
               // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
               inet_ntop(AF_INET, peer_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
               //printf("%s IPv4 Address = %s\n", client_addr_accepted->sin_addr, address_buffer_v4);
-              connfd = connect_to_peer_socket(address_buffer_v4, &server_addr_to_connect);
+              connfd = connect_to_peer_socket(address_buffer_v4, &server_addr_to_connect, PORT_CONNECT);
               if(connfd > 0) // set nonblocking
                 set_non_block(connfd); // FIXME: check that it's working
 
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
         demo(cv, dp, dev_name, img_width, img_height, connfd);
 
       if (key_choice == 'c')
-        demo(cv, dp, connfd, recvfd, &win);
+        demo(cv, dp, connfd, recvfd, &win, address_buffer_v4);
 
 //      caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
 //      caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
@@ -311,7 +311,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win)
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win, char * peer_hostname)
 {
   textentry entries_self[TEXT_ENTRIES];
   textentry entries_peer[TEXT_ENTRIES];
@@ -327,7 +327,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
   unsigned int row_offset_self = row_offset_peer+TEXT_ENTRIES+1;
   unsigned int col_offset = 1;
   char * peer_username = "test_peer"; // TODO obtain the info
-  char * peer_hostname = "whatever.com";  // TODO
+//  char * peer_hostname = "whatever.com";  // TODO
   caca_set_cursor(dp, 1);
 
   caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);

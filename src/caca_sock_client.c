@@ -109,7 +109,7 @@ void print_IP_addresses()
  *
  * @return socket file descriptor
  */
-int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server)
+int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server, in_port_t port)
 {
   int sockfd;
   char ip_name[256] = "";
@@ -144,7 +144,7 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
   memcpy(&(server->sin_addr), SOCKADDR *server_as_host->h_addr_list, SIZE);
   server->sin_family = AF_INET;
 //  server->sin_family = AF_UNSPEC; // TODO: allow IPv4 or IPv6
-  server->sin_port = PORT;
+  server->sin_port = port;
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
   {
