@@ -63,7 +63,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/param.h>
-#include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <netdb.h>
 
@@ -144,6 +143,7 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
   memset(server, 0, sizeof(*server));
   memcpy(&(server->sin_addr), SOCKADDR *server_as_host->h_addr_list, SIZE);
   server->sin_family = AF_INET;
+//  server->sin_family = AF_UNSPEC; // TODO: allow IPv4 or IPv6
   server->sin_port = PORT;
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
