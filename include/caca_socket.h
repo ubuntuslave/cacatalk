@@ -17,7 +17,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <sys/types.h>
+#define _GNU_SOURCE
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -32,9 +34,20 @@
 #define PORT           25666
 #define  ERROR_EXIT( _mssg, _num)  perror(_mssg);exit(_num);
 #define  MAXLINE       4096
+#define LISTEN_QUEUE_SIZE   5
 
+void set_non_block(int fd );
 int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server);
 int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline, int send_bytes);
 void print_IP_addresses();
+// The following typedef simplifies the function definition after it
+typedef void Sigfunc(int); // for signal handlers
+
+// override existing signal function to handle non-BSD systems
+Sigfunc* Signal(int signo, Sigfunc *func);
+
+// Signal handlers
+void on_sigchld(int signo);
+void str_receive(int sockfd);
 
 #endif // CACA_SOCKET_H_

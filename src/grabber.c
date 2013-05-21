@@ -51,41 +51,64 @@ int main(int argc, char **argv)
   int img_width = 640;
   int img_height = 480;
   char * dev_name;
-  int is_server = 0;
+  int is_server = 1;
   options *arg_opts;
-  arg_opts = (options *) malloc(sizeof(options));
+  arg_opts = (options *)malloc(sizeof(options));
 
-  if(get_options(argc, argv, arg_opts) == -1)
+  if (get_options(argc, argv, arg_opts) == -1)
   {
     fprintf(stderr, "%s: unable to get option arguments\n", argv[0]);
     return 1;
   }
 
   dev_name = arg_opts->video_device_name;
-  is_server = arg_opts->is_server;
-  if(is_server)
-    printf("Running in server mode\n");
-  else
-    printf("Running in client mode\n");
+
+  /* FIXME: Not needed
+   is_server = arg_opts->is_server;
+   if (is_server)
+   printf("Running in server mode\n");
+   else
+   printf("Running in client mode\n");
+   */
 
   set_window(STDIN_FILENO, &win);
 
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
-  int sockfd;
-  char ip_name[256];
-  char recvline[MAXLINE]; // receives data from socket
-  char sendline[MAXLINE]; // sends data to socket
-  // Check if there is a host name on command line; if not use default
-  if (strlen(arg_opts->peer_name) > 0)
-  {
-    // Attention: needs to have static memory for server
-    static struct sockaddr_in server;
-    strcpy(ip_name, arg_opts->peer_name);
-    sockfd = connect_to_peer_socket(ip_name, &server); // FIXME: not using for now (debugging)
+  int listenfd;
+  int connfd = -1; // Initial value for non-existing connection
+  struct sockaddr_in client_addr_accepted, server_addr_that_listens;
+  static struct sockaddr_in server_addr_to_connect;
+  socklen_t clilen = sizeof(client_addr_accepted);
+  pid_t childpid;
+  //void sig_chld(int);
 
-    char dummychar = getc(stdin); // TODO: Temp pause for debugging socket
+  // Solution to obtain interface address(es):
+  print_IP_addresses();
+
+  if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  {
+    ERROR_EXIT("socket call failed", 1)
   }
+
+  bzero(&server_addr_that_listens, sizeof(server_addr_that_listens));
+  server_addr_that_listens.sin_family = AF_INET;
+  server_addr_that_listens.sin_addr.s_addr = htonl(INADDR_ANY );
+  server_addr_that_listens.sin_port = PORT;
+
+  set_non_block(listenfd); // Set it as nonblocking descriptor (Not working)
+
+  if (bind(listenfd, SOCKADDR &server_addr_that_listens, sizeof(server_addr_that_listens)) == -1)
+  {
+    ERROR_EXIT(" bind call failed", 1)
+  }
+
+  if (-1 == listen(listenfd, LISTEN_QUEUE_SIZE))
+  {
+    ERROR_EXIT(" listen call failed", 1)
+  }
+
+  Signal(SIGCHLD, on_sigchld);
   // ----------------------------------------------------------------------
 
 //  cv = caca_create_canvas(80, 24);
@@ -108,7 +131,7 @@ int main(int argc, char **argv)
 
   int usec = 40000; // The refresh delay in microseconds.
   caca_set_display_time(dp, usec);
-  caca_set_mouse(dp, 0);  // Disable cursor by default
+  caca_set_mouse(dp, 0); // Disable cursor by default
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
   caca_clear_canvas(cv);
 
@@ -151,14 +174,22 @@ int main(int argc, char **argv)
             key_choice = 'c';
             demo = chat;
             break;
-        }
-
-        if (demo)
-        {
-//          caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
-//          caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
-          caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
-          caca_clear_canvas(cv);
+          case 'i':
+          case 'I':
+            key_choice = 'i';
+            if(connfd < 0) // Only attempt a connection when server mode hasn't accepted one already
+            {
+              // Initialize connection
+              // Check if there is a host name on command line; if not use default
+              if (strlen(arg_opts->peer_name) > 0)
+              {
+                // Attention: needs to have static memory for server
+                connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect);
+                if (connfd > 0)
+                  is_server = 0; // Connected to listening socket on the peer, so this becomes the client's behavior
+              }
+            }
+            break;
         }
       }
 
@@ -176,13 +207,49 @@ int main(int argc, char **argv)
        */
     }
 
+    // Acting in server mode by accepting connections at listening socket
+    if (is_server == 1)
+    {
+      // Recall: non-blocking accept has been set for the listenfd
+      if ((connfd = accept(listenfd, SOCKADDR &client_addr_accepted, &clilen)) < 0)
+      {
+        if (EINTR == errno)
+          continue; // back to loop
+        // Don't use if non-blocking:
+         //else
+         //ERROR_EXIT("accept error", 1);
+      }
+      else
+      { // A connection has been accepted
+        if ((childpid = fork()) == 0)
+        { // child process
+          close(listenfd); // close listening socket
+
+          // TODO: Receive message behavior
+          key_choice = 'c';
+          demo = chat;
+//          str_receive(connfd); // process the request // TODO:
+          exit(0);
+        }
+        close(connfd); // parent closes connected socket
+      }
+    }
+
     if (demo)
     {
-      if(key_choice == 'v')
-        demo(cv, dp, dev_name, img_width, img_height, sockfd);
+      if(connfd > 0) // set nonblocking
+        set_non_block(connfd); // FIXME: check that it's working
 
-      if(key_choice == 'c')
-        demo(cv, dp, sockfd, &win);
+      //          caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
+      //          caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+      caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+      caca_clear_canvas(cv);
+
+      if (key_choice == 'v')
+        demo(cv, dp, dev_name, img_width, img_height, connfd);
+
+      if (key_choice == 'c')
+        demo(cv, dp, connfd, &win);
 
 //      caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
 //      caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
@@ -203,12 +270,11 @@ int main(int argc, char **argv)
     }
   }
 
-  printf("Nicely here\n");
 // Clean up caca
   caca_free_display(dp);
   caca_free_canvas(cv);
 
-  close(sockfd); // close socket
+  close(connfd); // close socket
 
   return 0;
 }
@@ -217,8 +283,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
 {
   textentry entries[TEXT_ENTRIES];
   char * sendline = NULL; // Buffer to send through socket
-  char * recline = NULL;  // Buffer to receive from socket
-  unsigned int i, e = TEXT_ENTRIES-1, running = 1;
+  char * recline = NULL; // Buffer to receive from socket
+  unsigned int i, e = TEXT_ENTRIES - 1, running = 1;
   unsigned int newline_entered = 1; // Indicates when the return key has been pressed
   int text_buffer_size = (MIN(win->cols, BUFFER_SIZE)) - 2; // Leave padding (margin)
 
@@ -240,18 +306,18 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
     caca_event_t ev;
 
     unsigned int j, start, size;
-    if(newline_entered == 1)
+    if (newline_entered == 1)
     {
-      for (i = 0; i < TEXT_ENTRIES-1; i++)
+      for (i = 0; i < TEXT_ENTRIES - 1; i++)
       {
 
         caca_set_color_ansi(cv, CACA_BLACK, CACA_CONIO_CYAN);
         caca_fill_box(cv, 1, i + 2, text_buffer_size, 1, ' ');
 
         // Clear top line and put contents from line below:
-        memset(entries[i].buffer, '\0', entries[i].size* 4); // *4 because using uint32_t
-        memmove(entries[i].buffer, entries[i+1].buffer, (entries[i+1].size) * 4);
-        entries[i].size = entries[i+1].size;
+        memset(entries[i].buffer, '\0', entries[i].size * 4); // *4 because using uint32_t
+        memmove(entries[i].buffer, entries[i + 1].buffer, (entries[i + 1].size) * 4);
+        entries[i].size = entries[i + 1].size;
         entries[i].cursor = 0;
 
         start = 0;
@@ -259,7 +325,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
 
         for (j = 0; j < size; j++)
         {
-          caca_put_char(cv, 1+j, i + 2, entries[i].buffer[start + j]);
+          caca_put_char(cv, 1 + j, i + 2, entries[i].buffer[start + j]);
         }
         entries[i].changed = 0;
       }
@@ -272,7 +338,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
     }
     else // Only update last line if changed
     {
-      if(entries[e].changed == 1)
+      if (entries[e].changed == 1)
       {
         caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
         caca_fill_box(cv, 1, e + 2, text_buffer_size, 1, ' ');
@@ -281,7 +347,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
         size = entries[e].size;
         for (j = 0; j < size; j++)
         {
-          caca_put_char(cv, 1+j, e + 2, entries[e].buffer[start + j]);
+          caca_put_char(cv, 1 + j, e + 2, entries[e].buffer[start + j]);
         }
       }
     }
@@ -297,7 +363,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
       continue;
 
     // NOTE: memory allocation should not happen inside switch statement!
-    sendline = malloc(entries[e].size+2);
+    sendline = malloc(entries[e].size + 2);
     recline = malloc(MAXLINE);
 
     switch (caca_get_event_key_ch(&ev))
@@ -306,22 +372,23 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, Window *win)
         running = 0;
         // Free string buffers
         break;
-      //case CACA_KEY_TAB:
+        //case CACA_KEY_TAB:
       case CACA_KEY_RETURN:
       {
         // Send line through socket
-        memset(sendline, '\0', entries[e].size+2);
+        memset(sendline, '\0', entries[e].size + 2);
 
         int j;
         for (j = 0; j < entries[e].size; j++)
         {
-          sendline[j] = (char) entries[e].buffer[j];
+          sendline[j] = (char)entries[e].buffer[j];
         }
         sendline[j] = '\n'; // Null character terminated string
 
-        if(entries[e].size >0 && sendline != NULL)
+        if (entries[e].size > 0 && sendline != NULL )
         {
-          int nahhh = send_receive_data_through_socket(sockfd, sendline, recline, strlen(sendline));
+//          int nahhh = send_receive_data_through_socket(sockfd, sendline, recline, strlen(sendline));
+          int send_status = send(sockfd, sendline, strlen(sendline), 0);
         }
 
         newline_entered = 1;
@@ -585,13 +652,13 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
         int nahhh = send_receive_data_through_socket(sockfd, export, recvline, exported_bytes);
 
         /* TODO: just for testing (delete later)
-        char sendline[MAXLINE];
-        memset(sendline, '\0', 6);
-        strcpy(sendline, "FUCK\n");
-        int nahhh = send_receive_data_through_socket(sockfd, sendline, recvline, strlen(sendline));
-        printf("Sending %d bytes of caca video\n", nahhh);
-        // fwrite(export, exported_bytes, 1, stdout);
-        */
+         char sendline[MAXLINE];
+         memset(sendline, '\0', 6);
+         strcpy(sendline, "FUCK\n");
+         int nahhh = send_receive_data_through_socket(sockfd, sendline, recvline, strlen(sendline));
+         printf("Sending %d bytes of caca video\n", nahhh);
+         // fwrite(export, exported_bytes, 1, stdout);
+         */
         free(export);
       }
 
@@ -642,10 +709,10 @@ void set_window(int fd, Window *win)
   struct winsize size;
 
   if (ioctl(fd, TIOCGWINSZ, &size) < 0)
-    {
-      perror("TIOCGWINSZ error");
-      return;
-    }
+  {
+    perror("TIOCGWINSZ error");
+    return;
+  }
   win->rows = size.ws_row;
   win->cols = size.ws_col;
 }

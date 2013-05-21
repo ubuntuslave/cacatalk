@@ -102,6 +102,8 @@ void print_IP_addresses()
   // Free memory
   if (if_addr_struct != NULL )
     freeifaddrs(if_addr_struct);
+
+  char dummychar = getc(stdin); // TODO: Pause for debugging socket
 }
 
 /** TODO: description
@@ -131,8 +133,6 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
       // This only produces the localhost address
       //printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *) client_as_host->h_addr_list[0])));
 
-      // Solution to obtain interface address(es):
-      print_IP_addresses();
     }
   }
 
@@ -248,5 +248,62 @@ int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline
 //    return -1; // -1 implies failure
 
   return send_status; // 0 Implies success
+}
+
+
+void str_receive(int sockfd)
+{
+  ssize_t n;
+  char recvline[MAXLINE];
+
+  for (;;) // FIXME: don't put a loop like this
+  {
+//    if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
+    if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
+      return; /* connection closed by other end */
+
+    recvline[n] = '\0';
+    fwrite(recvline, n, 1, stdout);
+    //fputs(recvline, stdout);
+
+    //write(sockfd, recvline, n); // TODO:send back stuff
+  }
+}
+
+
+void set_non_block(int fd )
+{
+    int flagset;
+
+    flagset   = fcntl(fd, F_GETFL);
+    flagset   |= O_NONBLOCK;
+    fcntl(fd, F_SETFL, flagset);
+}
+
+/* if a SIGCHLD is received: */
+void on_sigchld(int signo)
+{
+  pid_t pid;
+  int status;
+
+  while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+    ;
+  return;
+}
+
+Sigfunc* Signal(int signo, Sigfunc *func)
+{
+  struct sigaction act, oact;
+
+  act.sa_handler = func;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = 0;
+  if (SIGALRM != signo)
+  {
+    act.sa_flags |= SA_RESTART;
+  }
+  if (sigaction(signo, &act, &oact) < 0)
+    return (SIG_ERR );
+  return (oact.sa_handler);
 }
 
