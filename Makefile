@@ -8,7 +8,7 @@
 CC         = gcc
 EXECS      =  cacatalk #caca_sock_server
 # List only those who will be created as objects:
-OBJS       = src/common_image src/caca_sock_client
+OBJS       = src/common_image src/caca_socket
 SRCS       = $(patsubst %, %.c, $(EXECS))
 OBJS_NAMES = $(patsubst %, %.o, $(OBJS))
 CFLAGS     =   -Wall -g

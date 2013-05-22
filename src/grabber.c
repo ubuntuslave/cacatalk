@@ -143,14 +143,6 @@ int main(int argc, char **argv)
 
   char label_name_of_peer[MAXHOSTNAMELEN] = ""; // Temp debug label
 
-// TODO: use an outer main loop with program
-  /*
-  for ( ; ; )
-  {
-
-  }
-  */
-
   // Go (main loop)
   while (!quit || childpid == 0) // FIXME: don't use childpid: Rather, move while block to another function
   {
