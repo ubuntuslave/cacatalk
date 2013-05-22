@@ -15,7 +15,7 @@ CFLAGS     =   -Wall -g
 INCLUDEFLAGS = -I../include -I./include
 ENVVARS    = # -DSHOWHOST -DDEVELOP 
 ALLFLAGS   = $(CFLAGS) $(INCLUDEFLAGS) # $(ENVVARS)
-LDFLAGS    = -lv4l2 -lcaca -lncurses
+LDFLAGS    = -lv4l2 -lcaca -lncurses -lpthread
 
 all: $(OBJS) $(EXECS)
 

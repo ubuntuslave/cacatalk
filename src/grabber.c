@@ -29,14 +29,21 @@
 #include <sys/mman.h>
 #include <linux/videodev2.h>
 #include <libv4l2.h>
+#include <pthread.h>
 
 #include "cacatalk_common.h"
 #include "common_image.h"
 #include "caca_socket.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
+// ******** THREADS  **********
+#define NUM_THREADS  1 // FIXME, put 4
+void * send_chat_thread(void * arguments);
+void * receive_chat_thread(void * arguments);
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
+// ----------------------------
+
+int chat(caca_canvas_t *cv, caca_display_t *dp, pthread_t *threads, int sendfd, int recvfd, Window *win, char * peer_hostname);
 int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
 void set_window(int fd, Window *win);
 void xioctl(int fh, int request, void *arg);
@@ -52,6 +59,7 @@ int main(int argc, char **argv)
   int img_height = 480;
   char * dev_name;
   int is_connected = 0;
+  pthread_t threads[NUM_THREADS];
   options *arg_opts;
   arg_opts = (options *)malloc(sizeof(options));
 
@@ -62,7 +70,6 @@ int main(int argc, char **argv)
   }
 
   dev_name = arg_opts->video_device_name;
-
   set_window(STDIN_FILENO, &win);
 
   // ----------------------------------------------------------------------
@@ -134,6 +141,7 @@ int main(int argc, char **argv)
   caca_refresh_display(dp);
 
   char label_name_of_peer[MAXHOSTNAMELEN] = ""; // Temp debug label
+
 
   // Go (main loop)
   while (!quit) // FIXME: don't use childpid: Rather, move while block to another function
@@ -296,7 +304,7 @@ int main(int argc, char **argv)
         demo(cv, dp, dev_name, img_width, img_height, connfd);
 
       if (key_choice == 'c')
-        demo(cv, dp, connfd, recvfd, &win, address_buffer_v4);
+        demo(cv, dp, threads, connfd, recvfd, &win, address_buffer_v4);
 
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
 
@@ -313,6 +321,7 @@ int main(int argc, char **argv)
        caca_refresh_display(dp);
        */
     }
+    /*
     else
     {
       // TODO: only temp debugging print label
@@ -320,6 +329,7 @@ int main(int argc, char **argv)
       caca_put_str(cv, 0, 0, label_name_of_peer);
       caca_refresh_display(dp);
     }
+    */
   }
 
   // Clean up caca
@@ -333,248 +343,60 @@ int main(int argc, char **argv)
   return 0;
 }
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
+int chat(caca_canvas_t *cv, caca_display_t *dp, pthread_t *threads, int sendfd, int recvfd, Window *win, char * peer_hostname)
 {
-  textentry entries_self[TEXT_ENTRIES];
-  textentry entries_peer[TEXT_ENTRIES];
-  char label_name_of_peer[MAXHOSTNAMELEN];
-  char * sendline = NULL; // Buffer to send through socket
-  char * recline = NULL; // Buffer to receive from socket
-  unsigned int i, e = TEXT_ENTRIES - 1, running = 1;
-  unsigned int new_peer_entry_bytes = 0; // Indicates when the size of a new peer line entry
-  unsigned int newline_entered = 1; // Indicates when the return key has been pressed
-  unsigned int first_time = 1; // Indicates when we are here for the first time
+  //  set_non_block(sendfd); // FIXME: check that it's working
+  //  set_non_block(recvfd); // FIXME: check that it's working
+
+  char label_recv[MAXHOSTNAMELEN];
   int text_buffer_size = (MIN(win->cols, BUFFER_SIZE)) - 2; // Leave padding (margin)
   unsigned int row_offset_peer = 1;
   unsigned int row_offset_self = row_offset_peer+TEXT_ENTRIES+1;
   unsigned int col_offset = 1;
   char * peer_username = "test_peer"; // TODO obtain the info
-//  char * peer_hostname = "whatever.com";  // TODO
+  caca_set_cursor(dp, 1); // Enable cursor
 
-  set_non_block(sendfd); // FIXME: check that it's working
-  set_non_block(recvfd); // FIXME: check that it's working
+  // ------------------ Create threads --------------------------------
+  long t = 0;
+  int rc;
 
-  caca_set_cursor(dp, 1);
+  // Sender arguments
+  struct thread_arg_struct chat_send_args;
+  chat_send_args.socketfd = sendfd;
+  chat_send_args.text_buffer_size = text_buffer_size;
+  chat_send_args.row_offset =  row_offset_self;
+  chat_send_args.col_offset =  col_offset;
+  chat_send_args.cv =  cv;
+  chat_send_args.dp =  dp;
+  char sender_label[MAX_INPUT] = "Text chat (self) - press: Enter to send || Escape to stop\0";
+  strcpy(chat_send_args.label, sender_label);
 
-  caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
-  sprintf(label_name_of_peer, "%s@%s", peer_username, peer_hostname);
-  caca_fill_box(cv, col_offset, row_offset_peer, text_buffer_size, 1, ' ');
-  caca_fill_box(cv, col_offset, row_offset_self, text_buffer_size, 1, ' ');
-  caca_put_str(cv, col_offset, row_offset_peer, label_name_of_peer);
-  caca_put_str(cv, col_offset, row_offset_self, "Text chat (self) - press: Enter to send || Escape to stop");
-
-  // NOTE: memory allocation should not happen inside switch statement!
-  sendline = malloc(MAXLINE);
-  recline = malloc(MAXLINE);
-
-  row_offset_peer++;
-  row_offset_self++;
-
-  for (i = 0; i < TEXT_ENTRIES; i++)
+  rc = pthread_create(&threads[t], NULL, send_chat_thread, (void *) &chat_send_args);
+  if (rc)
   {
-    entries_peer[i].buffer[0] = 0;
-    entries_peer[i].size = 0;
-    entries_peer[i].cursor = 0;
-    entries_peer[i].changed = 1;
-
-    entries_self[i].buffer[0] = 0;
-    entries_self[i].size = 0;
-    entries_self[i].cursor = 0;
-    entries_self[i].changed = 1;
+    ERROR_EXIT("pthread: send thread failure", 1)
   }
+  else
+    t++;
 
-  while (running)
+  // Receiver arguments
+  struct thread_arg_struct chat_recv_args;
+  chat_recv_args.socketfd = recvfd;
+  chat_recv_args.text_buffer_size = text_buffer_size;
+  chat_recv_args.row_offset =  row_offset_peer;
+  chat_recv_args.col_offset =  col_offset;
+  chat_recv_args.cv =  cv;
+  chat_recv_args.dp =  dp;
+  sprintf(label_recv, "%s@%s", peer_username, peer_hostname);
+  strcpy(chat_recv_args.label, label_recv);
+
+  rc = pthread_create(&threads[t], NULL, receive_chat_thread, (void *) &chat_recv_args);
+  if (rc)
   {
-    caca_event_t ev;
-
-    unsigned int j, start, size;
-
-    memset(recline, '\0', MAXLINE);
-    if(recvfd >0)
-      new_peer_entry_bytes = recv(recvfd, recline, MAXLINE - 1, 0); // FIXME
-
-    // Update peer entries
-    if(new_peer_entry_bytes > 0 || first_time == 1)
-    {
-      first_time = 0; // Reset flag
-      for (i = 0; i < TEXT_ENTRIES-1; i++)
-      {
-        caca_set_color_ansi(cv, CACA_BLACK, CACA_MAGENTA);
-        caca_fill_box(cv, col_offset, i + row_offset_peer, text_buffer_size, 1, ' ');
-
-        // Clear top line and put contents from line below:
-        memset(entries_peer[i].buffer, '\0', entries_peer[i].size * 4); // *4 because using uint32_t
-        memmove(entries_peer[i].buffer, entries_peer[i + 1].buffer, (entries_peer[i + 1].size) * 4);
-        entries_peer[i].size = entries_peer[i + 1].size;
-        entries_peer[i].cursor = 0;
-
-        start = 0;
-        size = entries_peer[i].size;
-
-        for (j = 0; j < size; j++)
-        {
-          caca_put_char(cv, col_offset + j, i + row_offset_peer, entries_peer[i].buffer[start + j]);
-        }
-        entries_peer[i].changed = 0;
-      }
-      caca_fill_box(cv, col_offset, e + row_offset_peer, text_buffer_size, 1, ' ');
-      start = 0;
-      entries_peer[e].size = new_peer_entry_bytes;
-      // TEST
-      /*
-      strcpy(recline, "test\0");
-      entries_peer[e].size = strlen(recline);
-      */
-      // ---------------------------
-
-      entries_peer[e].cursor = 0;
-      size = entries_peer[e].size;
-      memset(entries_peer[e].buffer, '\0', size * 4); // *4 because using uint32_t
-      for (j = 0; j < size; j++)
-      {
-        entries_peer[e].buffer[start + j] = (uint32_t) recline[start + j];
-        caca_put_char(cv, col_offset + j, e + row_offset_peer, entries_peer[e].buffer[start + j]);
-      }
-
-    }
-
-    // Update self entries
-    if (newline_entered == 1)
-    {
-      for (i = 0; i < TEXT_ENTRIES - 1; i++)
-      {
-
-        caca_set_color_ansi(cv, CACA_BLACK, CACA_CONIO_CYAN);
-        caca_fill_box(cv, col_offset, i + row_offset_self, text_buffer_size, 1, ' ');
-
-        // Clear top line and put contents from line below:
-        memset(entries_self[i].buffer, '\0', entries_self[i].size * 4); // *4 because using uint32_t
-        memmove(entries_self[i].buffer, entries_self[i + 1].buffer, (entries_self[i + 1].size) * 4);
-        entries_self[i].size = entries_self[i + 1].size;
-        entries_self[i].cursor = 0;
-
-        start = 0;
-        size = entries_self[i].size;
-
-        for (j = 0; j < size; j++)
-        {
-          caca_put_char(cv, col_offset + j, i + row_offset_self, entries_self[i].buffer[start + j]);
-        }
-        entries_self[i].changed = 0;
-      }
-      // Reset editable textbox (last line)
-      caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
-      caca_fill_box(cv, col_offset, i + row_offset_self, text_buffer_size, 1, ' ');
-      memset(entries_self[i].buffer, '\0', BUFFER_SIZE);
-      entries_self[i].size = 0;
-      entries_self[i].cursor = 0;
-    }
-    else // Only update last line if changed
-    {
-      if (entries_self[e].changed == 1)
-      {
-        caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
-        caca_fill_box(cv, col_offset, e + row_offset_self, text_buffer_size, 1, ' ');
-
-        start = 0;
-        size = entries_self[e].size;
-        for (j = 0; j < size; j++)
-        {
-          caca_put_char(cv, col_offset + j, e + row_offset_self, entries_self[e].buffer[start + j]);
-        }
-      }
-    }
-    entries_self[e].changed = 0;
-    newline_entered = 0; // always reset flag
-    new_peer_entry_bytes = 0;  // always reset (because we must have handled the entry already)
-
-    // Put the cursor on the active textentry
-    caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
-
-    caca_refresh_display(dp);
-
-    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
-      continue;
-
-    switch (caca_get_event_key_ch(&ev))
-    {
-      case CACA_KEY_ESCAPE:
-        running = 0;
-        // Free string buffers
-        break;
-        //case CACA_KEY_TAB:
-      case CACA_KEY_RETURN:
-      {
-        // Send line through socket
-        memset(sendline, '\0', entries_self[e].size + 1);
-
-        int j;
-        for (j = 0; j < entries_self[e].size; j++)
-        {
-          sendline[j] = (char)entries_self[e].buffer[j];
-        }
-//        sendline[j] = '\n'; // Null character terminated string
-
-        if (entries_self[e].size > 0 && sendline != NULL )
-        {
-          int send_status = send(sendfd, sendline, strlen(sendline), 0);
-        }
-
-        newline_entered = 1;
-        entries_self[e].changed = 1;
-        break;
-      }
-      case CACA_KEY_HOME:
-        entries_self[e].cursor = 0;
-        break;
-      case CACA_KEY_END:
-        entries_self[e].cursor = entries_self[e].size;
-        break;
-      case CACA_KEY_LEFT:
-        if (entries_self[e].cursor)
-          entries_self[e].cursor--;
-        break;
-      case CACA_KEY_RIGHT:
-        if (entries_self[e].cursor < entries_self[e].size)
-          entries_self[e].cursor++;
-        break;
-      case CACA_KEY_DELETE:
-        if (entries_self[e].cursor < entries_self[e].size)
-        {
-          memmove(entries_self[e].buffer + entries_self[e].cursor, entries_self[e].buffer + entries_self[e].cursor + 1,
-                  (entries_self[e].size - entries_self[e].cursor + 1) * 4);
-          entries_self[e].size--;
-          entries_self[e].changed = 1;
-        }
-        break;
-      case CACA_KEY_BACKSPACE:
-        if (entries_self[e].cursor)
-        {
-          memmove(entries_self[e].buffer + entries_self[e].cursor - 1, entries_self[e].buffer + entries_self[e].cursor,
-                  (entries_self[e].size - entries_self[e].cursor) * 4);
-          entries_self[e].size--;
-          entries_self[e].cursor--;
-          entries_self[e].changed = 1;
-        }
-        break;
-      default:
-        if (entries_self[e].size < BUFFER_SIZE)
-        {
-          memmove(entries_self[e].buffer + entries_self[e].cursor + 1, entries_self[e].buffer + entries_self[e].cursor,
-                  (entries_self[e].size - entries_self[e].cursor) * 4);
-          entries_self[e].buffer[entries_self[e].cursor] = caca_get_event_key_utf32(&ev);
-          entries_self[e].size++;
-          entries_self[e].cursor++;
-          entries_self[e].changed = 1;
-        }
-        break;
-    }
-
+    ERROR_EXIT("pthread: recv thread failure", 1)
   }
-
-  // NOTE: memory handling should not happen inside switch statement!
-  free(sendline); // Release buffer memory
-  free(recline); // Release buffer memory
+  else
+    t++;
 
   return 0;
 }
@@ -845,4 +667,285 @@ void set_window(int fd, Window *win)
   }
   win->rows = size.ws_row;
   win->cols = size.ws_col;
+}
+
+// ******************** THREADS *************************
+void * send_chat_thread(void * arguments)
+{
+    struct thread_arg_struct *args = (struct thread_arg_struct *) arguments;
+    int sendfd =  args->socketfd;
+    caca_canvas_t *cv=  args->cv;
+    caca_display_t *dp=  args->dp;
+    int text_buffer_size = args->text_buffer_size;
+    textentry entries_self[TEXT_ENTRIES];
+    char * sendline = NULL; // Buffer to send through socket
+    unsigned int i, e = TEXT_ENTRIES - 1, running = 1;
+    unsigned int j, start, size;
+    unsigned int newline_entered = 1; // Indicates when the return key has been pressed
+    unsigned int row_offset_self = args->row_offset;
+    unsigned int col_offset = 1;
+
+    caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
+    caca_fill_box(cv, col_offset, row_offset_self, text_buffer_size, 1, ' ');
+    caca_put_str(cv, col_offset, row_offset_self, args->label);
+
+    // NOTE: memory allocation should not happen inside switch statement!
+    sendline = malloc(MAXLINE);
+
+    row_offset_self++;
+
+    for (i = 0; i < TEXT_ENTRIES; i++)
+    {
+      entries_self[i].buffer[0] = 0;
+      entries_self[i].size = 0;
+      entries_self[i].cursor = 0;
+      entries_self[i].changed = 1;
+    }
+
+    while (running)
+    {
+      caca_event_t ev;
+
+      // Update self (sender) entries
+      if (newline_entered == 1)
+      {
+        for (i = 0; i < TEXT_ENTRIES - 1; i++)
+        {
+
+          caca_set_color_ansi(cv, CACA_BLACK, CACA_CONIO_CYAN);
+          caca_fill_box(cv, col_offset, i + row_offset_self, text_buffer_size, 1, ' ');
+
+          // Clear top line and put contents from line below:
+          memset(entries_self[i].buffer, '\0', entries_self[i].size * 4); // *4 because using uint32_t
+          memmove(entries_self[i].buffer, entries_self[i + 1].buffer, (entries_self[i + 1].size) * 4);
+          entries_self[i].size = entries_self[i + 1].size;
+          entries_self[i].cursor = 0;
+
+          start = 0;
+          size = entries_self[i].size;
+
+          for (j = 0; j < size; j++)
+          {
+            caca_put_char(cv, col_offset + j, i + row_offset_self, entries_self[i].buffer[start + j]);
+          }
+          entries_self[i].changed = 0;
+        }
+        // Reset editable textbox (last line)
+        caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
+        caca_fill_box(cv, col_offset, i + row_offset_self, text_buffer_size, 1, ' ');
+        memset(entries_self[i].buffer, '\0', BUFFER_SIZE);
+        entries_self[i].size = 0;
+        entries_self[i].cursor = 0;
+      }
+      else // Only update last line if changed
+      {
+        if (entries_self[e].changed == 1)
+        {
+          caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
+          caca_fill_box(cv, col_offset, e + row_offset_self, text_buffer_size, 1, ' ');
+
+          start = 0;
+          size = entries_self[e].size;
+          for (j = 0; j < size; j++)
+          {
+            caca_put_char(cv, col_offset + j, e + row_offset_self, entries_self[e].buffer[start + j]);
+          }
+        }
+      }
+      entries_self[e].changed = 0;
+      newline_entered = 0; // always reset flag
+
+      // Put the cursor on the active textentry
+      caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
+
+      caca_refresh_display(dp);
+
+      if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
+        continue;
+
+      switch (caca_get_event_key_ch(&ev))
+      {
+        case CACA_KEY_ESCAPE:
+          running = 0;
+          // Free string buffers
+          break;
+          //case CACA_KEY_TAB:
+        case CACA_KEY_RETURN:
+        {
+          // Send line through socket
+          memset(sendline, '\0', entries_self[e].size + 1);
+
+          int j;
+          for (j = 0; j < entries_self[e].size; j++)
+          {
+            sendline[j] = (char)entries_self[e].buffer[j];
+          }
+
+          if (entries_self[e].size > 0 && sendline != NULL )
+          {
+            int send_status = send(sendfd, sendline, strlen(sendline), 0); // FIXME: correct with truth
+          }
+
+          newline_entered = 1;
+          entries_self[e].changed = 1;
+          break;
+        }
+        case CACA_KEY_HOME:
+          entries_self[e].cursor = 0;
+          break;
+        case CACA_KEY_END:
+          entries_self[e].cursor = entries_self[e].size;
+          break;
+        case CACA_KEY_LEFT:
+          if (entries_self[e].cursor)
+            entries_self[e].cursor--;
+          break;
+        case CACA_KEY_RIGHT:
+          if (entries_self[e].cursor < entries_self[e].size)
+            entries_self[e].cursor++;
+          break;
+        case CACA_KEY_DELETE:
+          if (entries_self[e].cursor < entries_self[e].size)
+          {
+            memmove(entries_self[e].buffer + entries_self[e].cursor, entries_self[e].buffer + entries_self[e].cursor + 1,
+                    (entries_self[e].size - entries_self[e].cursor + 1) * 4);
+            entries_self[e].size--;
+            entries_self[e].changed = 1;
+          }
+          break;
+        case CACA_KEY_BACKSPACE:
+          if (entries_self[e].cursor)
+          {
+            memmove(entries_self[e].buffer + entries_self[e].cursor - 1, entries_self[e].buffer + entries_self[e].cursor,
+                    (entries_self[e].size - entries_self[e].cursor) * 4);
+            entries_self[e].size--;
+            entries_self[e].cursor--;
+            entries_self[e].changed = 1;
+          }
+          break;
+        default:
+          if (entries_self[e].size < BUFFER_SIZE)
+          {
+            memmove(entries_self[e].buffer + entries_self[e].cursor + 1, entries_self[e].buffer + entries_self[e].cursor,
+                    (entries_self[e].size - entries_self[e].cursor) * 4);
+            entries_self[e].buffer[entries_self[e].cursor] = caca_get_event_key_utf32(&ev);
+            entries_self[e].size++;
+            entries_self[e].cursor++;
+            entries_self[e].changed = 1;
+          }
+          break;
+      }
+
+    }
+
+    // NOTE: memory handling should not happen inside switch statement!
+    free(sendline); // Release buffer memory
+    pthread_exit(NULL);
+    return NULL;
+}
+
+void * receive_chat_thread(void * arguments)
+{
+  struct thread_arg_struct *args = (struct thread_arg_struct *) arguments;
+  int recvfd =  args->socketfd;
+  caca_canvas_t *cv=  args->cv;
+  caca_display_t *dp=  args->dp;
+  int text_buffer_size = args->text_buffer_size;
+  char  recline[MAXLINE] = ""; // Buffer to receive from socket
+  textentry entries_recv[TEXT_ENTRIES];
+  unsigned int i, e = TEXT_ENTRIES - 1, running = 1;
+  unsigned int j, start, size;
+  unsigned int row_offset_recv = args->row_offset;
+  unsigned int col_offset = 1;
+  unsigned int new_recv_entry_bytes = 0; // Indicates when the size of a new peer line entry
+  unsigned int first_time = 1; // Indicates when we are here for the first time
+
+  caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
+  caca_fill_box(cv, col_offset, row_offset_recv, text_buffer_size, 1, ' ');
+  caca_put_str(cv, col_offset, row_offset_recv, args->label);
+
+  // NOTE: memory allocation should not happen inside switch statement!
+//  recline = malloc(MAXLINE); // FIXME?
+
+  row_offset_recv++;
+
+  for (i = 0; i < TEXT_ENTRIES; i++)
+  {
+    entries_recv[i].buffer[0] = 0;
+    entries_recv[i].size = 0;
+    entries_recv[i].cursor = 0;
+    entries_recv[i].changed = 1;
+  }
+
+  while (running)
+  {
+    caca_event_t ev;
+
+    // Update peer (received) entries
+    if(new_recv_entry_bytes > 0 || first_time == 1)
+    {
+      first_time = 0; // Reset flag
+      for (i = 0; i < TEXT_ENTRIES-1; i++)
+      {
+        caca_set_color_ansi(cv, CACA_BLACK, CACA_MAGENTA);
+        caca_fill_box(cv, col_offset, i + row_offset_recv, text_buffer_size, 1, ' ');
+
+        // Clear top line and put contents from line below:
+        memset(entries_recv[i].buffer, '\0', entries_recv[i].size * 4); // *4 because using uint32_t
+        memmove(entries_recv[i].buffer, entries_recv[i + 1].buffer, (entries_recv[i + 1].size) * 4);
+        entries_recv[i].size = entries_recv[i + 1].size;
+        entries_recv[i].cursor = 0;
+
+        start = 0;
+        size = entries_recv[i].size;
+
+        for (j = 0; j < size; j++)
+        {
+          caca_put_char(cv, col_offset + j, i + row_offset_recv, entries_recv[i].buffer[start + j]);
+        }
+        entries_recv[i].changed = 0;
+      }
+      caca_fill_box(cv, col_offset, e + row_offset_recv, text_buffer_size, 1, ' ');
+      start = 0;
+      entries_recv[e].size = new_recv_entry_bytes;
+      entries_recv[e].cursor = 0;
+      size = entries_recv[e].size;
+      memset(entries_recv[e].buffer, '\0', size * 4); // *4 because using uint32_t
+      for (j = 0; j < size; j++)
+      {
+        entries_recv[e].buffer[start + j] = (uint32_t) recline[start + j];
+        caca_put_char(cv, col_offset + j, e + row_offset_recv, entries_recv[e].buffer[start + j]);
+      }
+
+    }
+
+    new_recv_entry_bytes = 0;  // always reset (because we must have handled the entry already)
+
+    // Put the cursor on the active textentry
+    caca_refresh_display(dp);
+
+    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
+      continue;
+
+    switch (caca_get_event_key_ch(&ev))
+    {
+      case CACA_KEY_ESCAPE:
+        running = 0;
+        // Free string buffers
+        break;
+      default:
+        break;
+    }
+
+  memset(recline, '\0', MAXLINE);
+  if(recvfd >0)
+    new_recv_entry_bytes = recv(recvfd, recline, MAXLINE, 0); // FIXME
+
+  }
+
+  // NOTE: memory handling should not happen inside switch statement!
+//  free(recline); // Release buffer memory // FIXME
+
+  pthread_exit(NULL);
+  return NULL;
 }

@@ -25,6 +25,16 @@ typedef struct textentry
   unsigned int size, cursor, changed;
 } textentry;
 
+struct thread_arg_struct {
+    int socketfd;
+    int text_buffer_size;
+    unsigned int row_offset;
+    unsigned int col_offset;
+    char label[MAX_INPUT]; ///< title string
+    caca_canvas_t *cv;  ///< caca canvas
+    caca_display_t *dp; ///< caca display
+};
+
 /** @brief
  A Window structure encapsulates the dimensions of the window and the
  amount by which the text within it has been scrolled. The  line_at_top
