@@ -42,7 +42,7 @@ void * receive_chat(void * arguments);
 
 // ----------------------------
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win, char * peer_hostname);
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
 int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
 void set_window(int fd, Window *win);
 void xioctl(int fh, int request, void *arg);
@@ -141,7 +141,6 @@ int main(int argc, char **argv)
 
   char label_name_of_peer[MAXHOSTNAMELEN] = ""; // Temp debug label
 
-
   // Go (main loop)
   while (!quit) // FIXME: don't use childpid: Rather, move while block to another function
   {
@@ -227,7 +226,8 @@ int main(int argc, char **argv)
     if ((is_connected == 0))
     {
       // Recall: non-blocking accept has been set for the listenfd
-      if ((recvfd = accept(listenfd, SOCKADDR &client_addr_accepted, &clilen)) < 0)
+//      if ((recvfd = accept(listenfd, SOCKADDR &client_addr_accepted, &clilen)) < 0)
+      if ((connfd = accept(listenfd, SOCKADDR &client_addr_accepted, &clilen)) < 0)
       {
         if (EINTR == errno)
           continue; // back to loop
@@ -238,7 +238,8 @@ int main(int argc, char **argv)
       else
       { // A connection has been accepted
 
-          connfd = dup(recvfd);
+//          connfd = dup(recvfd);
+          recvfd = dup(connfd);
 
           void * peer_addr_ptr = NULL;
           if (client_addr_accepted.sin_family == AF_INET) // check it is IP4
@@ -342,7 +343,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win, char * peer_hostname)
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
 {
   //  set_non_block(sendfd); // FIXME: check that it's working
   //  set_non_block(recvfd); // FIXME: check that it's working
@@ -357,10 +358,27 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
   char * peer_username = "test_peer"; // TODO obtain the info
   caca_set_cursor(dp, 1); // Enable cursor
 
+  struct timeval timeout;
+  struct timeval *pto;
+
+  // Timeout for select() is specified in argv[1]
+
+  /*// NULL for blocking
+  if (strcmp(argv[1], "-") == 0)
+  {
+      pto = NULL;                     // Infinite timeout
+  }
+  else
+*/
+  {
+      pto = &timeout;
+      timeout.tv_sec = 0;     // seconds
+      timeout.tv_usec = 1000; // microseconds
+  }
   // ------------------ Fill argument structures  --------------------------------
   // Sender arguments
   struct thread_arg_struct chat_send_args;
-  chat_send_args.socketfd = sockfd;
+  chat_send_args.socketfd = sendfd;
   chat_send_args.text_buffer_size = text_buffer_size;
   chat_send_args.row_offset =  row_offset_self;
   chat_send_args.col_offset =  col_offset;
@@ -372,8 +390,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
 
   // Receiver arguments
   struct thread_arg_struct chat_recv_args;
-//  chat_recv_args.socketfd = recvfd; // FIXME: Only using 1 socket to read and write
-  chat_recv_args.socketfd = sockfd;
+  chat_recv_args.socketfd = recvfd;
   chat_recv_args.text_buffer_size = text_buffer_size;
   chat_recv_args.row_offset =  row_offset_recv;
   chat_recv_args.col_offset =  col_offset;
@@ -383,13 +400,12 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
   strcpy(chat_recv_args.label, label_recv);
   // --------------------------------------------------------------------------------
 
-
-  int sendfd =  sockfd;
   textentry entries_self[TEXT_ENTRIES];
   char * sendline = NULL; // Buffer to send through socket
   unsigned int i, e = TEXT_ENTRIES - 1, running = 1;
   unsigned int j, start, size;
   unsigned int newline_entered = 1; // Indicates when the return key has been pressed
+  unsigned int send_succesful = 1; // 1: Indicates when the sending through socket succeeded
 
   char  recline[MAXLINE] = ""; // Buffer to receive from socket
   textentry entries_recv[TEXT_ENTRIES];
@@ -421,18 +437,47 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
     entries_recv[i].changed = 1;
   }
 
-  maxfd = MAXFD(fileno(stdin), sockfd) +1;
-  FD_ZERO(&readset);
-  FD_ZERO(&writeset);
-//      if ( stdin_eof == 0 )
-//          FD_SET(fileno(stdin), &readset);
-  FD_SET(sockfd, &readset);
-  FD_SET(sockfd, &writeset); // FIXME??? should I use 2 sockets?
-
+      maxfd = MAXFD(fileno(stdin), sendfd) +1; // FIXME: here is the problem? chicken vs egg case
+//      maxfd = MAXFD(fileno(stdin), recvfd) +1; // FIXME: here is the problem? chicken vs egg case
 
   while (running)
   {
-    caca_event_t ev;
+    // Important:
+    // Since these structures are modified by the call,
+    // we must ensure that we reinitialize them if we are repeatedly calling select() from within a loop.)
+      FD_ZERO(&readset);
+      FD_ZERO(&writeset);
+//      FD_SET(recvfd, &readset);
+      FD_SET(sendfd, &readset);
+      FD_SET(sendfd, &writeset); // FIXME??? should I use 2 sockets?
+
+    if ( select( maxfd, &readset, &writeset, NULL, pto ) > 0 )
+    {
+//        if ( FD_ISSET(recvfd, &readset))
+        if ( FD_ISSET(sendfd, &readset))
+        {
+          memset(recline, '\0', MAXLINE);
+//          new_recv_entry_bytes = recv(recvfd, recline, MAXLINE, 0); // FIXME
+          new_recv_entry_bytes = recv(sendfd, recline, MAXLINE, 0); // FIXME
+        }
+
+        if ( FD_ISSET(sendfd, &writeset))
+        {
+          if (entries_self[e].size > 0 && newline_entered == 1 && send_succesful == 0)
+          {
+            int sent_bytes = send(sendfd, sendline, entries_self[e].size, 0); // FIXME: check if sent & correct with true socket name
+            if(sent_bytes >= 0)
+            {
+              send_succesful = 1;
+            }
+          }
+        }
+    }
+    else
+    {
+      char msg_select_ready[MAXLINE] = "Select is NOT ready";
+      caca_put_str(cv, 0, row_offset_self+TEXT_ENTRIES+1, msg_select_ready);
+    }
 
     // Update peer (received) entries
     if(new_recv_entry_bytes > 0 || first_time == 1)
@@ -440,7 +485,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
       first_time = 0; // Reset flag
       for (i = 0; i < TEXT_ENTRIES-1; i++)
       {
-        caca_set_color_ansi(cv, CACA_BLACK, CACA_MAGENTA);
+        caca_set_color_ansi(cv, CACA_YELLOW, CACA_MAGENTA);
         caca_fill_box(cv, col_offset, i + row_offset_recv, text_buffer_size, 1, ' ');
 
         // Clear top line and put contents from line below:
@@ -459,6 +504,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
         entries_recv[i].changed = 0;
       }
       caca_fill_box(cv, col_offset, e + row_offset_recv, text_buffer_size, 1, ' ');
+      if(new_recv_entry_bytes > 0)
+        caca_set_attr(cv, CACA_BLINK);
       start = 0;
       entries_recv[e].size = new_recv_entry_bytes;
       entries_recv[e].cursor = 0;
@@ -469,6 +516,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
         entries_recv[e].buffer[start + j] = (uint32_t) recline[start + j];
         caca_put_char(cv, col_offset + j, e + row_offset_recv, entries_recv[e].buffer[start + j]);
       }
+//      caca_unset_attr(cv, CACA_BLINK);
     }
     new_recv_entry_bytes = 0;  // always reset (because we must have handled the entry already)
 
@@ -518,15 +566,20 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
         }
       }
     }
+    // always reset flags after updating entries
     entries_self[e].changed = 0;
-    newline_entered = 0; // always reset flag after updating entries
+    newline_entered = 0;
 
     // Put the cursor on the active textentry
     caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
 
     caca_refresh_display(dp);
 
-    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
+    caca_event_t ev;
+
+    //  timeout A timeout value in microseconds, -1 for blocking behaviour
+    int timeout = 1000;
+    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, timeout) == 0)
       continue;
 
     switch (caca_get_event_key_ch(&ev))
@@ -538,17 +591,22 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
         //case CACA_KEY_TAB:
       case CACA_KEY_RETURN:
       {
-        // Send line through socket
-        memset(sendline, '\0', entries_self[e].size + 1);
-
-        int j;
-        for (j = 0; j < entries_self[e].size; j++)
+        if(send_succesful == 1 && entries_self[e].size > 0) // Check if we can accept a new entry
         {
-          sendline[j] = (char)entries_self[e].buffer[j];
-        }
+          // Send line through socket
+          memset(sendline, '\0', entries_self[e].size + 1);
 
-        newline_entered = 1;
-        entries_self[e].changed = 1;
+          int j;
+          for (j = 0; j < entries_self[e].size; j++)
+          {
+            sendline[j] = (char)entries_self[e].buffer[j];
+          }
+
+          // Set flags
+          newline_entered = 1;
+          entries_self[e].changed = 1;
+          send_succesful = 0;
+        }
         break;
       }
       case CACA_KEY_HOME:
@@ -598,26 +656,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
     }
 
 
-      if ( select( maxfd, &readset, &writeset, NULL, NULL ) > 0 )
-      {
-          if ( FD_ISSET(sockfd, &readset))
-          {
-            memset(recline, '\0', MAXLINE);
-            new_recv_entry_bytes = recv(sockfd, recline, MAXLINE, 0); // FIXME
-          }
-
-          if ( FD_ISSET(sockfd, &writeset))
-          {
-              if (entries_self[e].size > 0 && sendline != NULL  && newline_entered == 1)
-              {
-                int send_status = send(sockfd, sendline, strlen(sendline), 0); // FIXME: check if sent & correct with true socket name
-              }
-          }
-      }
   }
-
-  send_chat( (void *) &chat_send_args);
-  receive_chat( (void *) &chat_recv_args);
 
   free(sendline);
 
