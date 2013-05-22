@@ -37,7 +37,8 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 // ******** THREADS  **********
-#define NUM_THREADS  1 // FIXME, put 4
+static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+#define NUM_THREADS  2 // FIXME, put 4
 void * send_chat_thread(void * arguments);
 void * receive_chat_thread(void * arguments);
 
@@ -340,7 +341,9 @@ int main(int argc, char **argv)
   close(recvfd); // close socket
   close(listenfd);
 
-  return 0;
+//  return 0;
+  pthread_exit(NULL); // FIXME: perhaps it should join a thread, for instance
+
 }
 
 int chat(caca_canvas_t *cv, caca_display_t *dp, pthread_t *threads, int sendfd, int recvfd, Window *win, char * peer_hostname)
@@ -379,6 +382,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, pthread_t *threads, int sendfd, 
   else
     t++;
 
+//  /*
   // Receiver arguments
   struct thread_arg_struct chat_recv_args;
   chat_recv_args.socketfd = recvfd;
@@ -397,8 +401,11 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, pthread_t *threads, int sendfd, 
   }
   else
     t++;
+//  */
 
-  return 0;
+  pthread_exit(NULL); // FIXME: perhaps it should join a thread, for instance
+  //    return pthread_join(some_thread, NULL); // Wait until thread is finished
+
 }
 
 int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd)
@@ -758,7 +765,9 @@ void * send_chat_thread(void * arguments)
       // Put the cursor on the active textentry
       caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
 
+//      int s = pthread_mutex_lock(&mtx);
       caca_refresh_display(dp);
+//      s = pthread_mutex_unlock(&mtx);
 
       if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
         continue;
@@ -921,8 +930,9 @@ void * receive_chat_thread(void * arguments)
 
     new_recv_entry_bytes = 0;  // always reset (because we must have handled the entry already)
 
-    // Put the cursor on the active textentry
-    caca_refresh_display(dp);
+//    int s = pthread_mutex_lock(&mtx);
+    caca_refresh_display(dp); // FIXME: separate the portions of the canvas!!!!
+//    s = pthread_mutex_unlock(&mtx);
 
     if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
       continue;
