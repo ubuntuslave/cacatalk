@@ -32,8 +32,7 @@
 #define SOCKADDR       (struct sockaddr*)
 #define SIZE           sizeof(struct sockaddr_in)
 #define DEFAULT_HOST   "eniac.geo.hunter.cuny.edu"
-#define PORT_LISTEN           25666
-#define PORT_CONNECT          25667
+#define PORT           25666
 #define  ERROR_EXIT( _mssg, _num)  perror(_mssg);exit(_num);
 #define  MAXLINE       4096
 #define LISTEN_QUEUE_SIZE   5

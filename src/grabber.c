@@ -36,7 +36,7 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win, char * peer_hostname);
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
 int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
 void set_window(int fd, Window *win);
 void xioctl(int fh, int request, void *arg);
@@ -81,8 +81,8 @@ int main(int argc, char **argv)
   struct sockaddr_in client_addr_accepted, server_addr_that_listens;
   static struct sockaddr_in server_addr_to_connect;
   socklen_t clilen = sizeof(client_addr_accepted);
-  char address_buffer_v4[INET_ADDRSTRLEN];
-  pid_t childpid;
+  char address_buffer_v4[INET_ADDRSTRLEN] = "";
+  pid_t childpid = -1;
   //void sig_chld(int);
 
   // Solution to obtain interface address(es):
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
   bzero(&server_addr_that_listens, sizeof(server_addr_that_listens));
   server_addr_that_listens.sin_family = AF_INET;
   server_addr_that_listens.sin_addr.s_addr = htonl(INADDR_ANY );
-  server_addr_that_listens.sin_port = PORT_LISTEN;
+  server_addr_that_listens.sin_port = PORT;
 
   set_non_block(listenfd); // Set it as nonblocking descriptor (Not working)
 
@@ -141,8 +141,18 @@ int main(int argc, char **argv)
 //  display_menu();
   caca_refresh_display(dp);
 
+  char label_name_of_peer[MAXHOSTNAMELEN] = ""; // Temp debug label
+
+// TODO: use an outer main loop with program
+  /*
+  for ( ; ; )
+  {
+
+  }
+  */
+
   // Go (main loop)
-  while (!quit)
+  while (!quit || childpid == 0) // FIXME: don't use childpid: Rather, move while block to another function
   {
     caca_event_t ev;
     int key_choice; // The key pressed to be switched upon
@@ -186,9 +196,32 @@ int main(int argc, char **argv)
               if (strlen(arg_opts->peer_name) > 0)
               {
                 // Attention: needs to have static memory for server
-                connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect, PORT_CONNECT);
+                connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect, PORT);
                 if(connfd > 0) // set nonblocking
-                  set_non_block(connfd); // FIXME: check that it's working
+                {
+
+                  if ((childpid = fork()) == 0)
+                  { // child process
+                    close(listenfd); // close listening socket
+                    recvfd = dup(connfd);
+
+                    void * peer_addr_ptr = NULL;
+                    if (server_addr_to_connect.sin_family == AF_INET) // check it is IP4
+                    { // is a valid IP4 Address
+                      peer_addr_ptr = (struct sockaddr_in *) &(server_addr_to_connect.sin_addr);
+                      // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
+                      inet_ntop(AF_INET, peer_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
+
+                      sprintf(label_name_of_peer, "%s@%s", "host", address_buffer_v4); // TODO:temp
+                    }
+                    is_server = 0;
+
+                  }
+                  close(connfd); // parent closes connected socket
+                  quit = 1; // and quits
+
+
+                }
               }
             }
             break;
@@ -224,20 +257,34 @@ int main(int argc, char **argv)
       else
       { // A connection has been accepted
 
-        set_non_block(recvfd); // FIXME: check that it's working
+//        set_non_block(recvfd); // FIXME: check that it's working
 
         if ((childpid = fork()) == 0)
         { // child process
           close(listenfd); // close listening socket
+          connfd = dup(recvfd);
+//          set_non_block(connfd); // FIXME: check that it's working
 
+          void * peer_addr_ptr = NULL;
+          if (client_addr_accepted.sin_family == AF_INET) // check it is IP4
+          { // is a valid IP4 Address
+            peer_addr_ptr = (struct sockaddr_in *) &(client_addr_accepted.sin_addr);
+            // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
+            inet_ntop(AF_INET, peer_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
+
+            sprintf(label_name_of_peer, "%s@%s", "server", address_buffer_v4); // TODO:temp
+          }
           // TODO: Receive message behavior
 //          key_choice = 'c';
 //          demo = chat;
 //          str_receive(connfd); // process the request // TODO:
 //          exit(0);
           // Try now to connect for sending if not done so already (as by initial request)
+          /*
           if(connfd < 0)
           {
+            caca_put_str(cv, 0, 0, "FUCK, I'm the listening socket");
+
             void * peer_addr_ptr = NULL;
             if (client_addr_accepted.sin_family == AF_INET) // check it is IP4
             { // is a valid IP4 Address
@@ -245,13 +292,13 @@ int main(int argc, char **argv)
               // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
               inet_ntop(AF_INET, peer_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
               //printf("%s IPv4 Address = %s\n", client_addr_accepted->sin_addr, address_buffer_v4);
-              connfd = connect_to_peer_socket(address_buffer_v4, &server_addr_to_connect, PORT_CONNECT);
+              connfd = connect_to_peer_socket(address_buffer_v4, &server_addr_to_connect, PORT_LISTEN); // FIXME: assuming the port is thisx
               if(connfd > 0) // set nonblocking
                 set_non_block(connfd); // FIXME: check that it's working
 
             }
-            /* TODO: suppor IPv6
-          else if (client_addr_accepted.sin_family == AF_INET6) // check it is IP6
+            // TODO: suppor IPv6
+          //else if (client_addr_accepted.sin_family == AF_INET6) // check it is IP6
           { // is a valid IP6 Address
             peer_addr_ptr = (struct sockaddr_in6 *) &(client_addr_accepted.sin6_addr);
             char address_buffer_v6[INET6_ADDRSTRLEN];
@@ -260,12 +307,12 @@ int main(int argc, char **argv)
             //printf("%s IPv6 Address = %s\n", if_addr_ptr->ifa_name, address_buffer_v6);
             connfd = connect_to_peer_socket(address_buffer_v6, &server_addr_to_connect);
           }
-             */
-          }
 
-          is_server = 0; // Not longer listening // FIXME: not sure if it should disable the server aspect of the socket
+          }
+           */
         }
-        close(connfd); // parent closes connected socket
+        close(recvfd); // parent closes receiving socket
+        quit = 1;
       }
     }
 
@@ -273,7 +320,9 @@ int main(int argc, char **argv)
     {
       //          caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
       //          caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
-      caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+
+      // TODO: temporarily disable to read debug messages
+      //caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
       caca_clear_canvas(cv);
 
       if (key_choice == 'v')
@@ -282,8 +331,6 @@ int main(int argc, char **argv)
       if (key_choice == 'c')
         demo(cv, dp, connfd, recvfd, &win, address_buffer_v4);
 
-//      caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
-//      caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
 
       caca_clear_canvas(cv);
@@ -299,19 +346,39 @@ int main(int argc, char **argv)
        caca_refresh_display(dp);
        */
     }
+    /*
+    else
+    {
+      // TODO: only temp debugging print label
+      caca_clear_canvas(cv);
+      caca_put_str(cv, 0, 0, label_name_of_peer);
+      caca_refresh_display(dp);
+    }
+    */
   }
 
 // Clean up caca
-  caca_free_display(dp);
-  caca_free_canvas(cv);
+  if(childpid == 0) // Childprocess can free the canvas and close all sockets
+  {
+    caca_free_display(dp);
+    caca_free_canvas(cv);
 
-  close(connfd); // close socket
-  close(recvfd); // close socket
+    close(connfd); // close socket
+    close(recvfd); // close socket
+    close(listenfd);
+  }
+  else
+  { // The parent just loops forever // FIXME
+    for ( ; ; )
+      {
+
+      }
+  }
 
   return 0;
 }
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *win, char * peer_hostname)
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
 {
   textentry entries_self[TEXT_ENTRIES];
   textentry entries_peer[TEXT_ENTRIES];
@@ -328,6 +395,10 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
   unsigned int col_offset = 1;
   char * peer_username = "test_peer"; // TODO obtain the info
 //  char * peer_hostname = "whatever.com";  // TODO
+
+  set_non_block(sendfd); // FIXME: check that it's working
+  set_non_block(recvfd); // FIXME: check that it's working
+
   caca_set_cursor(dp, 1);
 
   caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
@@ -403,6 +474,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
 
       entries_peer[e].cursor = 0;
       size = entries_peer[e].size;
+      memset(entries_peer[e].buffer, '\0', size * 4); // *4 because using uint32_t
       for (j = 0; j < size; j++)
       {
         entries_peer[e].buffer[start + j] = (uint32_t) recline[start + j];
@@ -490,7 +562,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sockfd, int recvfd, Window *
 
         if (entries_self[e].size > 0 && sendline != NULL )
         {
-          int send_status = send(sockfd, sendline, strlen(sendline), 0);
+          int send_status = send(sendfd, sendline, strlen(sendline), 0);
         }
 
         newline_entered = 1;

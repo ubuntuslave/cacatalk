@@ -153,7 +153,9 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
 
   if (connect(sockfd, SOCKADDR server, sizeof(*server)) == -1)
   {
-    ERROR_EXIT("connect call failed", 1);
+    char err_msg[MAXLINE];
+    sprintf(err_msg, "connect call to %s:%d failed", peer_hostname, (int) port);
+    ERROR_EXIT(err_msg, 1);
   }
 
   return sockfd;
