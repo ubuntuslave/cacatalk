@@ -51,7 +51,7 @@ int main(int argc, char **argv)
   int img_width = 640;
   int img_height = 480;
   char * dev_name;
-  int is_server = 1;
+  int is_connected = 0;
   options *arg_opts;
   arg_opts = (options *)malloc(sizeof(options));
 
@@ -62,14 +62,6 @@ int main(int argc, char **argv)
   }
 
   dev_name = arg_opts->video_device_name;
-
-  /* FIXME: Not needed
-   is_server = arg_opts->is_server;
-   if (is_server)
-   printf("Running in server mode\n");
-   else
-   printf("Running in client mode\n");
-   */
 
   set_window(STDIN_FILENO, &win);
 
@@ -144,7 +136,7 @@ int main(int argc, char **argv)
   char label_name_of_peer[MAXHOSTNAMELEN] = ""; // Temp debug label
 
   // Go (main loop)
-  while (!quit || childpid == 0) // FIXME: don't use childpid: Rather, move while block to another function
+  while (!quit) // FIXME: don't use childpid: Rather, move while block to another function
   {
     caca_event_t ev;
     int key_choice; // The key pressed to be switched upon
@@ -185,16 +177,12 @@ int main(int argc, char **argv)
             {
               // Initialize connection
               // Check if there is a host name on command line; if not use default
-              if (strlen(arg_opts->peer_name) > 0)
+              if( (strlen(arg_opts->peer_name) > 0) && (is_connected == 0))
               {
                 // Attention: needs to have static memory for server
                 connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect, PORT);
                 if(connfd > 0) // set nonblocking
                 {
-
-                  if ((childpid = fork()) == 0)
-                  { // child process
-                    close(listenfd); // close listening socket
                     recvfd = dup(connfd);
 
                     void * peer_addr_ptr = NULL;
@@ -206,13 +194,7 @@ int main(int argc, char **argv)
 
                       sprintf(label_name_of_peer, "%s@%s", "host", address_buffer_v4); // TODO:temp
                     }
-                    is_server = 0;
-
-                  }
-                  close(connfd); // parent closes connected socket
-                  quit = 1; // and quits
-
-
+                    is_connected = 1; // To indicate not longer trying to connect
                 }
               }
             }
@@ -235,7 +217,7 @@ int main(int argc, char **argv)
     }
 
     // Acting in server mode by accepting connections at listening socket
-    if (is_server == 1)
+    if ((is_connected == 0))
     {
       // Recall: non-blocking accept has been set for the listenfd
       if ((recvfd = accept(listenfd, SOCKADDR &client_addr_accepted, &clilen)) < 0)
@@ -249,13 +231,7 @@ int main(int argc, char **argv)
       else
       { // A connection has been accepted
 
-//        set_non_block(recvfd); // FIXME: check that it's working
-
-        if ((childpid = fork()) == 0)
-        { // child process
-          close(listenfd); // close listening socket
           connfd = dup(recvfd);
-//          set_non_block(connfd); // FIXME: check that it's working
 
           void * peer_addr_ptr = NULL;
           if (client_addr_accepted.sin_family == AF_INET) // check it is IP4
@@ -266,6 +242,9 @@ int main(int argc, char **argv)
 
             sprintf(label_name_of_peer, "%s@%s", "server", address_buffer_v4); // TODO:temp
           }
+
+          is_connected = 1; // To indicate not longer trying to connect
+
           // TODO: Receive message behavior
 //          key_choice = 'c';
 //          demo = chat;
@@ -275,7 +254,6 @@ int main(int argc, char **argv)
           /*
           if(connfd < 0)
           {
-            caca_put_str(cv, 0, 0, "FUCK, I'm the listening socket");
 
             void * peer_addr_ptr = NULL;
             if (client_addr_accepted.sin_family == AF_INET) // check it is IP4
@@ -302,9 +280,6 @@ int main(int argc, char **argv)
 
           }
            */
-        }
-        close(recvfd); // parent closes receiving socket
-        quit = 1;
       }
     }
 
@@ -338,7 +313,6 @@ int main(int argc, char **argv)
        caca_refresh_display(dp);
        */
     }
-    /*
     else
     {
       // TODO: only temp debugging print label
@@ -346,7 +320,6 @@ int main(int argc, char **argv)
       caca_put_str(cv, 0, 0, label_name_of_peer);
       caca_refresh_display(dp);
     }
-    */
   }
 
 // Clean up caca
