@@ -15,7 +15,7 @@ CFLAGS     =   -Wall -g
 INCLUDEFLAGS = -I../include -I./include
 ENVVARS    = # -DSHOWHOST -DDEVELOP 
 ALLFLAGS   = $(CFLAGS) $(INCLUDEFLAGS) # $(ENVVARS)
-LDFLAGS    = -lv4l2 -lcaca -lncurses -lpthread
+LDFLAGS    = -lv4l2 -lcaca -lncurses -lrt #-lpthread # "librt" stands for "real time library" used for the AIO
 
 all: $(OBJS) $(EXECS)
 
@@ -33,8 +33,8 @@ install: $(EXECS)
 $(OBJS): 
 	$(CC) -c $(ALLFLAGS) $@.c $(LDFLAGS) -o $@.o
 	
-cacatalk: include/cacatalk_common.h src/grabber.c $(OBJS_NAMES)
-	$(CC) $(ALLFLAGS) $(OBJS_NAMES) src/grabber.c $(LDFLAGS) -o $@
+cacatalk: include/cacatalk_common.h src/cacatalk.c $(OBJS_NAMES)
+	$(CC) $(ALLFLAGS) $(OBJS_NAMES) src/cacatalk.c $(LDFLAGS) -o $@
 
 #caca_sock_server: src/caca_sock_server.c
 #	$(CC) $(ALLFLAGS) src/caca_sock_server.c -o $@

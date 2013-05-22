@@ -36,6 +36,7 @@
 #define  ERROR_EXIT( _mssg, _num)  perror(_mssg);exit(_num);
 #define  MAXLINE       4096
 #define LISTEN_QUEUE_SIZE   5
+#define  MAXFD( _x, _y)  ((_x)>(_y)?(_x):(_y))
 
 void set_non_block(int fd );
 int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server, in_port_t port);

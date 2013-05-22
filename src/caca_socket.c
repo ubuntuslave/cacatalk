@@ -68,8 +68,6 @@
 
 #include "caca_socket.h"
 
-#define  MAXFD( _x, _y)  ((_x)>(_y)?(_x):(_y))
-
 void print_IP_addresses()
 {
   // This only produces the localhost address
