@@ -322,23 +322,13 @@ int main(int argc, char **argv)
     }
   }
 
-// Clean up caca
-  if(childpid == 0) // Childprocess can free the canvas and close all sockets
-  {
-    caca_free_display(dp);
-    caca_free_canvas(cv);
+  // Clean up caca
+  caca_free_display(dp);
+  caca_free_canvas(cv);
 
-    close(connfd); // close socket
-    close(recvfd); // close socket
-    close(listenfd);
-  }
-  else
-  { // The parent just loops forever // FIXME
-    for ( ; ; )
-      {
-
-      }
-  }
+  close(connfd); // close socket
+  close(recvfd); // close socket
+  close(listenfd);
 
   return 0;
 }
