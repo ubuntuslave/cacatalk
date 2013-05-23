@@ -33,7 +33,7 @@ install: $(EXECS)
 $(OBJS): 
 	$(CC) -c $(ALLFLAGS) $@.c $(LDFLAGS) -o $@.o
 	
-cacatalk: include/cacatalk_common.h src/cacatalk.c $(OBJS_NAMES)
+cacatalk: src/cacatalk.c $(OBJS_NAMES)
 	$(CC) $(ALLFLAGS) $(OBJS_NAMES) src/cacatalk.c $(LDFLAGS) -o $@
 
 #caca_sock_server: src/caca_sock_server.c

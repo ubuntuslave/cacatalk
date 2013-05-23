@@ -29,7 +29,7 @@
 #include <sys/mman.h>
 #include <sys/select.h>
 
-#include "cacatalk_common.h"
+#include "cacatalk.h"
 #include "common_image.h"
 #include "caca_socket.h"
 
@@ -522,7 +522,6 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recv_vid_fd, Win
     }
 
     // Update peer (received) video
-//    if ((new_recv_video_bytes > 0) && (new_recv_video_bytes <= area_of_interest)) // FIXME: not the right area related to number of bytes
     if (new_recv_video_bytes > 0)
     {
       ssize_t imported_bytes = caca_import_area_from_memory(cv, 0, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
@@ -843,7 +842,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, Windo
             //      export = caca_export_canvas_to_memory(cv, vid_params->caca_format ? format : "ansi", &exported_bytes);
 //            export = caca_export_area_to_memory(cv, 0, 0, cols, rows, vid_params->caca_format ? vid_params->caca_format : "ansi", &exported_bytes);
             export = caca_export_area_to_memory(cv, 0, 0, cols, rows,
-                                                vid_params->caca_format ? vid_params->caca_format : "utf8",
+                                                vid_params->caca_format ? vid_params->caca_format : "caca",
                                                 &exported_bytes);
             if (!export)
             {
@@ -867,7 +866,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, Windo
       }
 
       /* TODO: delete, just for testing
-      export = caca_export_area_to_memory(cv, 0, 0, cols, rows, "utf8",
+      export = caca_export_area_to_memory(cv, 0, 0, cols, rows, vid_params->caca_format ? vid_params->caca_format : "utf8",
                                               &exported_bytes);
       if (!export)
       {
@@ -875,7 +874,13 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, Windo
       }
       else
       {
-        caca_import_area_from_memory(cv, 0, rows+10, export, exported_bytes, "utf8");
+        int imported_bytes = caca_import_area_from_memory(cv, 0, rows+10, export, exported_bytes, vid_params->caca_format ? vid_params->caca_format : "caca");
+
+        char exp_imp_label[100] = "";
+        sprintf(exp_imp_label, "Exported = %d bytes, Imported %d bytes (%dx%d) frame", exported_bytes, imported_bytes, cols,
+                rows);
+        caca_put_str(cv, 0, rows + 3, exp_imp_label);
+
         free(export);
       }
       */
@@ -1302,7 +1307,7 @@ void set_window(int fd, unsigned short video_lines, Window *win)
   win->cols = size.ws_col;
   win->video_lines = video_lines;
   win->video_cols = video_lines; // Just a safe square value (temporary)
-  win->caca_format = "utf8";
+  win->caca_format = "caca"; // Arbitrary format for caca export/import
 }
 
 // ******************** THREADS *************************
