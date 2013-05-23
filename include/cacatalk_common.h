@@ -41,6 +41,7 @@ typedef struct _window
   unsigned short cols;
   unsigned short video_lines;
   unsigned short video_cols;
+  char *caca_format;      ///< preferred libcaca format (e.g. "ansi") to export video (for transmission). Arbitrarily set to "utf8"
 } Window;
 
 typedef struct options_s
@@ -90,7 +91,7 @@ typedef struct video_params_s {
  *
  * @return the video device file descriptor (greater than -1 if video was set/open successfully)
  */
-int set_video(video_params *vid_params, char *dev_name, unsigned int cv_height_for_video, int img_width, int img_height);
+int set_video(video_params *vid_params, char *dev_name, Window *win, int img_width, int img_height);
 
 /** @brief Stop streaming video and close V4L video device
  *
