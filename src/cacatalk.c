@@ -40,8 +40,8 @@ void * receive_chat(void * arguments);
 
 // ----------------------------
 
-static void chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
-static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd);
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
+int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd);
 static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
 
 void set_window(int fd, Window *win);
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
   int quit = 0;
   caca_canvas_t *cv;
   caca_display_t *dp;
-  int img_width = 640;
+  int img_width = 640; // TODO: parametrize
   int img_height = 480;
   char * dev_name;
   int is_connected = 0;
@@ -71,10 +71,10 @@ int main(int argc, char **argv)
   }
 
   // --------------- Video related ---------------------------------
+  unsigned int lines_of_video = 20; // Arbitrary number of lines // TODO: parametrize
   video_params *vid_params;
   vid_params = (video_params *)malloc(sizeof(video_params));
   dev_name = arg_opts->video_device_name;
-  int video_device_out_fd; // TODO from set_video...()
   // ---------------------------------------------------
 
   // ----------------------------------------------------------------------
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
   char label_name_of_peer[MAXHOSTNAMELEN] = ""; // Temp debug label
 
   // Go (main loop)
-  while (!quit) // FIXME: don't use childpid: Rather, move while block to another function
+  while (!quit)
   {
     caca_event_t ev;
     int key_choice; // The key pressed to be switched upon
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
           case 'v':
           case 'V':
             key_choice = 'v';
-            set_video(vid_params, dev_name, 50, img_width, img_height); //FIXME: arbitrary canvas height for video
+            set_video(vid_params, dev_name, lines_of_video, img_width, img_height); //FIXME: arbitrary canvas height for video
             demo = grab; // TODO: just to test for now
 //            demo = grab_messy; // TODO: just to test for now
             break;
@@ -303,9 +303,7 @@ int main(int argc, char **argv)
     {
       //          caca_set_color_ansi(cv, CACA_DEFAULT, CACA_TRANSPARENT);
       //          caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
-
-      // TODO: temporarily disable to read debug messages
-      //caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+      caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
       caca_clear_canvas(cv);
 
       if (key_choice == 'v')
@@ -354,7 +352,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-static void chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
 {
   //  set_non_block(sendfd); // FIXME: check that it's working
   //  set_non_block(recvfd); // FIXME: check that it's working
@@ -522,7 +520,7 @@ static void chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, 
       }
       caca_fill_box(cv, col_offset, e + row_offset_recv, text_buffer_size, 1, ' ');
       if(new_recv_entry_bytes > 0)
-        caca_set_attr(cv, CACA_BLINK);
+        caca_set_attr(cv, CACA_BLINK);  // TODO: not working yet
       start = 0;
       entries_recv[e].size = new_recv_entry_bytes;
       entries_recv[e].cursor = 0;
@@ -533,7 +531,7 @@ static void chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, 
         entries_recv[e].buffer[start + j] = (uint32_t) recline[start + j];
         caca_put_char(cv, col_offset + j, e + row_offset_recv, entries_recv[e].buffer[start + j]);
       }
-//      caca_unset_attr(cv, CACA_BLINK);
+       caca_unset_attr(cv, CACA_BLINK); // TODO: not working yet
     }
     new_recv_entry_bytes = 0;  // always reset (because we must have handled the entry already)
 
@@ -677,10 +675,10 @@ static void chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, 
 
   free(sendline);
 
-//  return 0;
+  return 0;
 }
 
-static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd)
+int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd)
 {
   fd_set fds;
   struct timeval tv;
@@ -728,7 +726,7 @@ static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_param
       if (r == -1)
       {
         perror("select");
-//        return errno;
+        return errno;
       }
 
       CLEAR(vid_params->buf);
@@ -742,7 +740,7 @@ static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_param
       {
         fprintf(stderr, "grab: Unable to load caca from V4L\n");
         caca_free_canvas(cv);
-//        return 1;
+        return 1;
       }
 
       caca_clear_canvas(cv);
@@ -751,7 +749,7 @@ static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_param
         fprintf(stderr, "grab: Can't dither image with algorithm '%s'\n", vid_params->caca_dither);
         unload_image(im);
         caca_free_canvas(cv);
-//        return -1;
+        return -1;
       }
 
       if (vid_params->caca_brightness != -1)
@@ -795,7 +793,8 @@ static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_param
       xioctl(vid_params->v4l_fd, VIDIOC_QBUF, &(vid_params->buf));
     }
   }
-//  return 0;
+
+  return 0;
 }
 
 static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd)
@@ -813,14 +812,14 @@ static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, in
   //-----------------------------------------
   // caca test: from img2txt
   void *export;
-  char *format = NULL;
+  char *format = "ansi";
   size_t exported_bytes;
   unsigned int font_width = 6, font_height = 10;
   float aspect_ratio = ((float)img_width / (float)img_height) * ((float)font_height / font_width);
   unsigned int lines = caca_get_canvas_height(cv);
   unsigned int cols = (unsigned int)(aspect_ratio * (float)lines);
 
-  char *dither = NULL;
+  char *dither = "fstein";
   float gamma = -1, brightness = -1, contrast = -1;
   struct image *im; // Image struct to use in caca
   // libcaca context
@@ -987,7 +986,7 @@ static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, in
       //unload_image(im); // Enable it if using memcpy in the loading
 
       // This is what needs to be sent through the socket
-      /*
+//      /*
 //      export = caca_export_canvas_to_memory(cv, format ? format : "ansi", &exported_bytes);
       export = caca_export_area_to_memory(cv, 0, 0, cols, lines, format ? format : "ansi", &exported_bytes);
       if (!export)
@@ -1002,7 +1001,7 @@ static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, in
 
         free(export);
       }
-        /*
+//        /*
 
       // FIXME: Nice display margin:
       /*
