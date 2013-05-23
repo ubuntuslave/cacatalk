@@ -14,6 +14,8 @@
 
 #include <getopt.h>
 #include <sys/param.h>
+#include <linux/videodev2.h>
+#include <libv4l2.h>
 #include "caca.h"
 
 #define BUFFER_SIZE MAX_INPUT
@@ -34,6 +36,41 @@ struct thread_arg_struct {
     caca_canvas_t *cv;  ///< caca canvas
     caca_display_t *dp; ///< caca display
 };
+
+typedef struct video_params_s {
+  char dev_name[MAXPATHLEN]; ///< the path to the video device name
+  int img_width;        ///< Video frame width
+  int img_height;       ///< Video frame heigth
+  int v4l_fd;           ///< file despcriptor for the open video device
+  struct v4l2_format fmt;  ///< v4l stream data format
+  struct v4l2_buffer buf;  ///< video buffer info
+  struct v4l2_requestbuffers req; ///< v4l memory mapping buffers (cacatalk uses a double buffer)
+  unsigned int number_of_buffers;///< The number of memory mapping buffers
+  struct buffer *buffers;       ///< array of memory buffer structure for video
+  enum v4l2_buf_type type;      ///< Indicates the type of buffering (e.g. V4L2_BUF_TYPE_VIDEO_CAPTURE)
+  enum v4l2_memory   memory;    ///< Indicates the type of memory for v4l stream (e.g. V4L2_MEMORY_MMAP)
+  char *caca_format;      ///< preferred libcaca format (e.g. "ansi") to export video (for transmission)
+  char *caca_dither;      ///< Indicates the algorithm to be used for dithering with libcaca
+  float caca_gamma;       ///< Gamma value (unset: to be implemented in the future)
+  float caca_brightness;  ///< Brightness (unset: to be implemented in the future)
+  float caca_contrast;    ///< Contrast (unset: to be implemented in the future)
+  float aspect_ratio;   ///< Aspect ratio based to fit video in given number of columns in caca_canvas
+  unsigned int cv_rows; ///< Number of rows to resolve video on caca _anvas
+  unsigned int cv_cols; ///< Number of columns to resolve video on caca _anvas
+} video_params;
+
+
+/** @brief TODO
+ *
+ * @return the video device file descriptor (greater than -1 if video was set/open successfully)
+ */
+int set_video(video_params *vid_params, char *dev_name, unsigned int cv_height_for_video, int img_width, int img_height);
+
+/** @brief Stop streaming video and close V4L video device
+ *
+ * @return the video device file descriptor (greater than -1 if video was set/open successfully)
+ */
+void close_video_stream(video_params *vid_params);
 
 /** @brief
  A Window structure encapsulates the dimensions of the window and the

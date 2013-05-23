@@ -28,8 +28,6 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/select.h>
-#include <linux/videodev2.h>
-#include <libv4l2.h>
 
 #include "cacatalk_common.h"
 #include "common_image.h"
@@ -42,8 +40,10 @@ void * receive_chat(void * arguments);
 
 // ----------------------------
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
-int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
+static void chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
+static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd);
+static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
+
 void set_window(int fd, Window *win);
 void xioctl(int fh, int request, void *arg);
 
@@ -59,6 +59,8 @@ int main(int argc, char **argv)
   char * dev_name;
   int is_connected = 0;
 //  pthread_t threads[NUM_THREADS];
+  set_window(STDIN_FILENO, &win); // Create a window object in order to obtain dimensions
+
   options *arg_opts;
   arg_opts = (options *)malloc(sizeof(options));
 
@@ -68,8 +70,12 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  // --------------- Video related ---------------------------------
+  video_params *vid_params;
+  vid_params = (video_params *)malloc(sizeof(video_params));
   dev_name = arg_opts->video_device_name;
-  set_window(STDIN_FILENO, &win);
+  int video_device_out_fd; // TODO from set_video...()
+  // ---------------------------------------------------
 
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
@@ -169,7 +175,9 @@ int main(int argc, char **argv)
           case 'v':
           case 'V':
             key_choice = 'v';
-            demo = grab;
+            set_video(vid_params, dev_name, 50, img_width, img_height); //FIXME: arbitrary canvas height for video
+            demo = grab; // TODO: just to test for now
+//            demo = grab_messy; // TODO: just to test for now
             break;
           case 'c':
           case 'C':
@@ -301,7 +309,8 @@ int main(int argc, char **argv)
       caca_clear_canvas(cv);
 
       if (key_choice == 'v')
-        demo(cv, dp, dev_name, img_width, img_height, connfd);
+        demo(cv, dp, vid_params, connfd);
+//        demo(cv, dp, dev_name, img_width, img_height, connfd); // Using grab_messy
 
       if (key_choice == 'c')
         demo(cv, dp, connfd, recvfd, &win, address_buffer_v4);
@@ -336,6 +345,8 @@ int main(int argc, char **argv)
   caca_free_display(dp);
   caca_free_canvas(cv);
 
+  close_video_stream(vid_params);
+  // Close sockets:
   close(connfd); // close socket
   close(recvfd); // close socket
   close(listenfd);
@@ -343,7 +354,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
+static void chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
 {
   //  set_non_block(sendfd); // FIXME: check that it's working
   //  set_non_block(recvfd); // FIXME: check that it's working
@@ -375,6 +386,12 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *
       timeout.tv_sec = 0;     // seconds
       timeout.tv_usec = 1000; // microseconds
   }
+
+  // Create datagram sockets for sending receiving video
+  int recv_video_fd = dup(sendfd);
+  int send_video_fd = dup(sendfd);
+
+
   // ------------------ Fill argument structures  --------------------------------
   // Sender arguments
   struct thread_arg_struct chat_send_args;
@@ -660,10 +677,128 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *
 
   free(sendline);
 
-  return 0;
+//  return 0;
 }
 
-int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd)
+static void grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd)
+{
+  fd_set fds;
+  struct timeval tv;
+  unsigned int r;
+  void *export;
+  size_t exported_bytes;
+  struct image *im; // Image struct to use in caca
+  int quit = 0;
+
+  // Go (main loop)
+  while (!quit)
+  {
+    caca_event_t ev;
+
+    while (caca_get_event(dp, CACA_EVENT_ANY, &ev, 0))
+    {
+      if (caca_get_event_type(&ev) & CACA_EVENT_KEY_PRESS)
+      {
+        switch (caca_get_event_key_ch(&ev))
+        {
+          case 'q':
+          case 'Q':
+          case CACA_KEY_ESCAPE:
+            quit = 1;
+            break;
+        }
+
+      }
+    }
+
+    if (!quit)
+    {
+      do
+      {
+        FD_ZERO(&fds);
+        FD_SET(vid_params->v4l_fd, &fds);
+
+        // Timeout.
+        tv.tv_sec = 2;
+        tv.tv_usec = 0;
+
+        r = select(vid_params->v4l_fd + 1, &fds, NULL, NULL, &tv);
+      } while ((r == -1 && (errno = EINTR)));
+
+      if (r == -1)
+      {
+        perror("select");
+//        return errno;
+      }
+
+      CLEAR(vid_params->buf);
+      vid_params->buf.type = vid_params->type;
+      vid_params->buf.memory = vid_params->memory;
+      xioctl(vid_params->v4l_fd, VIDIOC_DQBUF, &(vid_params->buf));
+
+      //-----------------------------------------
+      im = load_image_from_V4L_buffer(&(vid_params->fmt), &(vid_params->buffers[vid_params->buf.index]), vid_params->buf.bytesused);
+      if (!im)
+      {
+        fprintf(stderr, "grab: Unable to load caca from V4L\n");
+        caca_free_canvas(cv);
+//        return 1;
+      }
+
+      caca_clear_canvas(cv);
+      if (caca_set_dither_algorithm(im->dither, vid_params->caca_dither ? vid_params->caca_dither : "fstein"))
+      {
+        fprintf(stderr, "grab: Can't dither image with algorithm '%s'\n", vid_params->caca_dither);
+        unload_image(im);
+        caca_free_canvas(cv);
+//        return -1;
+      }
+
+      if (vid_params->caca_brightness != -1)
+        caca_set_dither_brightness(im->dither, vid_params->caca_brightness);
+      if (vid_params->caca_contrast != -1)
+        caca_set_dither_contrast(im->dither, vid_params->caca_contrast);
+      if (vid_params->caca_gamma != -1)
+        caca_set_dither_gamma(im->dither, vid_params->caca_gamma);
+
+      caca_dither_bitmap(cv, 0, 0, vid_params->cv_cols, vid_params->cv_rows, im->dither, im->pixels);
+
+      //unload_image(im); // Enable it if using memcpy in the loading
+
+//      /* TODO: for now disabled (not exporting
+      // This is what needs to be sent through the socket
+//      export = caca_export_canvas_to_memory(cv, vid_params->caca_format ? format : "ansi", &exported_bytes);
+      export = caca_export_area_to_memory(cv, 0, 0, vid_params->cv_cols, vid_params->cv_rows, vid_params->caca_format ? vid_params->caca_format : "ansi", &exported_bytes);
+      if (!export)
+      {
+        fprintf(stderr, "grab: Can't export to format '%s'\n", vid_params->caca_format);
+      }
+      else
+      {
+//        fwrite(export, len, 1, stdout);
+        char * recvline;
+        int nahhh = send_receive_data_through_socket(sockfd, export, recvline, exported_bytes);
+
+        free(export);
+      }
+//*/
+      // TODO: Nice display margin:
+       // ------------------------------------------------------------------
+//       caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+//       caca_draw_thin_box(cv, 1, 1, caca_get_canvas_width(cv) - 2, caca_get_canvas_height(cv) - 2);
+//       caca_printf(cv, 4, 1, "[%i.%i FPS]----", 1000000 / caca_get_display_time(dp),
+//       (10000000 / caca_get_display_time(dp)) % 10);
+       // ------------------------------------------------------------------
+
+      caca_refresh_display(dp);
+
+      xioctl(vid_params->v4l_fd, VIDIOC_QBUF, &(vid_params->buf));
+    }
+  }
+//  return 0;
+}
+
+static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd)
 {
   struct v4l2_format fmt;
   struct v4l2_buffer buf;
@@ -685,7 +820,6 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
   unsigned int lines = caca_get_canvas_height(cv);
   unsigned int cols = (unsigned int)(aspect_ratio * (float)lines);
 
-  //char *format = NULL;
   char *dither = NULL;
   float gamma = -1, brightness = -1, contrast = -1;
   struct image *im; // Image struct to use in caca
@@ -815,7 +949,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
       if (r == -1)
       {
         perror("select");
-        return errno;
+//        return errno;
       }
 
       CLEAR(buf);
@@ -829,7 +963,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
       {
         fprintf(stderr, "grab: Unable to load caca from V4L\n");
         caca_free_canvas(cv);
-        return 1;
+//        return 1;
       }
 
       caca_clear_canvas(cv);
@@ -838,7 +972,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
         fprintf(stderr, "grab: Can't dither image with algorithm '%s'\n", dither);
         unload_image(im);
         caca_free_canvas(cv);
-        return -1;
+//        return -1;
       }
 
       if (brightness != -1)
@@ -853,6 +987,7 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
       //unload_image(im); // Enable it if using memcpy in the loading
 
       // This is what needs to be sent through the socket
+      /*
 //      export = caca_export_canvas_to_memory(cv, format ? format : "ansi", &exported_bytes);
       export = caca_export_area_to_memory(cv, 0, 0, cols, lines, format ? format : "ansi", &exported_bytes);
       if (!export)
@@ -865,16 +1000,9 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
         char * recvline;
         int nahhh = send_receive_data_through_socket(sockfd, export, recvline, exported_bytes);
 
-        /* TODO: just for testing (delete later)
-         char sendline[MAXLINE];
-         memset(sendline, '\0', 6);
-         strcpy(sendline, "FUCK\n");
-         int nahhh = send_receive_data_through_socket(sockfd, sendline, recvline, strlen(sendline));
-         printf("Sending %d bytes of caca video\n", nahhh);
-         // fwrite(export, exported_bytes, 1, stdout);
-         */
         free(export);
       }
+        /*
 
       // FIXME: Nice display margin:
       /*
@@ -899,7 +1027,108 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, i
     v4l2_munmap(buffers[i].start, buffers[i].length);
   v4l2_close(fd);
 
-  return 0;
+//  return 0;
+}
+
+int set_video(video_params *vid_params, char *dev_name, unsigned int cv_height_for_video, int img_width, int img_height)
+{
+  unsigned int i, n_buffers;
+
+  // ------ Arbitrary settings:
+  vid_params->caca_format = "ansi";
+  vid_params->caca_dither = "fstein";
+  vid_params->number_of_buffers = 2; // Arbitrary double buffer
+  vid_params->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  vid_params->memory = V4L2_MEMORY_MMAP;
+  unsigned int font_width = 6, font_height = 10; // FIXME: purely arbitrary based on the usual ansi format for terminals
+  // -------------------------------------------------------
+
+  vid_params->img_width = img_width;
+  vid_params->img_height = img_height;
+  vid_params->aspect_ratio = ((float)img_width / (float)img_height) * ((float)font_height / font_width);
+  vid_params->cv_rows = cv_height_for_video;
+  vid_params->cv_cols = (unsigned int) (vid_params->aspect_ratio * (float) vid_params->cv_rows);
+
+  vid_params->caca_gamma = -1;
+  vid_params->caca_brightness = -1;
+  vid_params->caca_contrast = -1;
+
+  strcpy(vid_params->dev_name, dev_name);
+  vid_params->v4l_fd = v4l2_open(vid_params->dev_name, O_RDWR | O_NONBLOCK, 0);
+  if (vid_params->v4l_fd < 0)
+  {
+    perror("set_video: Cannot open video device\n");
+    exit(EXIT_FAILURE);
+  }
+
+  CLEAR(vid_params->fmt);
+  vid_params->fmt.type = vid_params->type;
+  vid_params->fmt.fmt.pix.width = img_width;
+  vid_params->fmt.fmt.pix.height = img_height;
+  vid_params->fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24; // The simplest 3-color channels 8bpp format
+  vid_params->fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+  xioctl(vid_params->v4l_fd, VIDIOC_S_FMT, &(vid_params->fmt));
+  if (vid_params->fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24)
+  {
+    perror("set_video: Libv4l didn't accept RGB24 format. Can't proceed.\n");
+    exit(EXIT_FAILURE);
+  }
+  if ((vid_params->fmt.fmt.pix.width != img_width) || (vid_params->fmt.fmt.pix.height != img_height))
+    printf("Warning: driver is sending image at %dx%d\n", vid_params->fmt.fmt.pix.width, vid_params->fmt.fmt.pix.height);
+
+  CLEAR(vid_params->req);
+  vid_params->req.count = vid_params->number_of_buffers;
+  vid_params->req.type = vid_params->type;
+  vid_params->req.memory = vid_params->memory;
+  xioctl(vid_params->v4l_fd, VIDIOC_REQBUFS, &(vid_params->req));
+
+  vid_params->buffers = calloc(vid_params->req.count, sizeof(*(vid_params->buffers))); // A double buffer (there is only 2 requests)
+
+  for (n_buffers = 0; n_buffers < vid_params->req.count; ++n_buffers)
+  {
+    CLEAR(vid_params->buf);
+
+    vid_params->buf.type = vid_params->type;
+    vid_params->buf.memory = vid_params->memory;
+    vid_params->buf.index = n_buffers;
+
+    xioctl(vid_params->v4l_fd, VIDIOC_QUERYBUF, &(vid_params->buf));
+
+    vid_params->buffers[n_buffers].length = vid_params->buf.length;
+    vid_params->buffers[n_buffers].start = v4l2_mmap(NULL, vid_params->buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, vid_params->v4l_fd, vid_params->buf.m.offset);
+
+    if (MAP_FAILED == vid_params->buffers[n_buffers].start)
+    {
+      perror("set_video: mmap");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  for (i = 0; i < n_buffers; ++i)
+  {
+    CLEAR(vid_params->buf);
+    vid_params->buf.type = vid_params->type;
+    vid_params->buf.memory = vid_params->memory;
+    vid_params->buf.index = i;
+    xioctl(vid_params->v4l_fd, VIDIOC_QBUF, &(vid_params->buf));
+  }
+
+  xioctl(vid_params->v4l_fd, VIDIOC_STREAMON, &(vid_params->type));
+
+  return vid_params->v4l_fd;
+}
+
+void close_video_stream(video_params *vid_params)
+{
+  unsigned int i;
+  xioctl(vid_params->v4l_fd, VIDIOC_STREAMOFF, &(vid_params->type));
+
+  for (i = 0; i < vid_params->number_of_buffers; ++i)
+    v4l2_munmap(vid_params->buffers[i].start, vid_params->buffers[i].length);
+
+  v4l2_close(vid_params->v4l_fd);
+
+  free(vid_params);
 }
 
 void xioctl(int fh, int request, void *arg)
