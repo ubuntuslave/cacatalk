@@ -27,6 +27,30 @@ typedef struct textentry
   unsigned int size, cursor, changed;
 } textentry;
 
+/** @brief
+ A Window structure encapsulates the dimensions of the window and the
+ amount by which the text within it has been scrolled. The  line_at_top
+ member is the lowest index of all lines in the text buffer that is currently
+ visible in the window, i.e., the index of the top line on the screen.
+ Only complete lines are displayed, so line_at_top is the index of the
+ line whose entire contents are visible.
+ */
+typedef struct _window
+{
+  unsigned short rows;
+  unsigned short cols;
+  unsigned short video_lines;
+  unsigned short video_cols;
+} Window;
+
+typedef struct options_s
+{
+  char video_device_name[BUFFER_SIZE]; ///< The video device name
+  char peer_name[MAXHOSTNAMELEN]; ///< The IP address or hostname of the peer to connect to
+  int is_server; ///< To indicate socket behavior (either as server=1, or client=0 (default))
+} options;
+
+// TODO: delete
 struct thread_arg_struct {
     int socketfd;
     int text_buffer_size;
@@ -38,6 +62,8 @@ struct thread_arg_struct {
 };
 
 typedef struct video_params_s {
+  int is_ok; ///< 1: Indicates when the video device is setup correctly. 0: is not okay
+  int is_on; ///< 1: Indicates when the video device is streaming. 0: the video is not streaming. -1: status is undefined
   char dev_name[MAXPATHLEN]; ///< the path to the video device name
   int img_width;        ///< Video frame width
   int img_height;       ///< Video frame heigth
@@ -68,30 +94,40 @@ int set_video(video_params *vid_params, char *dev_name, unsigned int cv_height_f
 
 /** @brief Stop streaming video and close V4L video device
  *
- * @return the video device file descriptor (greater than -1 if video was set/open successfully)
+ * @param a pointer to the parameters structure of the video device
  */
 void close_video_stream(video_params *vid_params);
 
-/** @brief
- A Window structure encapsulates the dimensions of the window and the
- amount by which the text within it has been scrolled. The  line_at_top
- member is the lowest index of all lines in the text buffer that is currently
- visible in the window, i.e., the index of the top line on the screen.
- Only complete lines are displayed, so line_at_top is the index of the
- line whose entire contents are visible.
+/** @brief Attempts to turn the video stream on and sets the related indicated flag in the passed structure.
+ *
+ * @param vid_params A pointer to the parameters structure for the video device to which the request will be made to.
+ *
+ * @retval 1    if the streaming request was set successfully
+ * @retval 0    if the streaming request did not succeed, so the stream is off.
  */
-typedef struct _window
-{
-  unsigned short rows;
-  unsigned short cols;
-} Window;
+int turn_video_stream_on(video_params *vid_params);
 
-typedef struct options_s
-{
-  char video_device_name[BUFFER_SIZE]; ///< The video device name
-  char peer_name[MAXHOSTNAMELEN]; ///< The IP address or hostname of the peer to connect to
-  int is_server; ///< To indicate socket behavior (either as server=1, or client=0 (default))
-} options;
+/** @brief Attempts to turn the video stream off and sets the related indicated flag in the passed structure.
+ *
+ * @param vid_params A pointer to the parameters structure for the video device to which the request will be made to.
+ *
+ * @retval  0    if the turning off streaming request was set successfully
+ * @retval -1    if the streaming request did not succeed.
+ */
+int turn_video_stream_off(video_params *vid_params);
+
+/** @brief It persistently calls the v4l2_ioctl() function to program the V4L2 device.
+ *
+ * @param fd    An open file descriptor.
+ * @param request The encoded request indicating how to program the device (e.g. VIDIOC_STREAMON, VIDIOC_S_FMT, etc.)
+ *                 Macros and defines specifying V4L2 ioctl requests are located in the videodev2.h header file
+ * @param arg   The appropriate arguments (or pointer to a struct, e.g. v4l2_requestbuffers) related to the request at hand.
+ *
+ * @retval 0    request set successfully
+ * @retval -1   on error. Also, the errno variable is set appropriately
+ */
+int xioctl(int fd, int request, void *arg);
+
 
 /** @brief Parses command-line options and corresponding arguments using the getopt() function
  * found in the unistd library.
@@ -103,53 +139,6 @@ typedef struct options_s
  * @retval 0 if successfully parsed all options
  * @retval -1 if there was an error parsing options
  */
-int get_options(int argc, char **argv, options * opt)
-  {
-    opterr = 0;
-    int c;
+int get_options(int argc, char **argv, options * opt);
 
-    // Initialize defaults
-    strcpy(opt->video_device_name, "/dev/video0\0");
-    memset(opt->peer_name, '\0', MAXHOSTNAMELEN);
-    opt->is_server = 0; // Socket client is the default behavior
-
-    while ((c = getopt(argc, argv, "sv:p:")) != -1) // The ":" next to a flag indicates to expect a value
-    {
-      switch (c)
-      {
-        case 's':
-          opt->is_server = 1;
-          break;
-        case 'v':
-          strcpy(opt->video_device_name, optarg);
-          break;
-        case 'p':
-          strcpy(opt->peer_name, optarg);
-          break;
-        case '?':
-        {
-          if (optopt == 'v' || optopt == 'p')
-            fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-          else if (isprint (optopt))
-            fprintf(stderr, "Unknown option `-%c'.\n", optopt);
-          else
-            fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
-          return -1;
-        }
-        default:
-          abort();
-          break;
-      }
-    }
-
-    // Get non-option arguments (usernames, in this case)
-    /* None so far
-     for (int index = optind; index < argc; index++)
-     {
-     argv[index];
-     }
-     */
-
-    return 0;
-  };
 #endif /* CACATALK_COMMON_H_ */

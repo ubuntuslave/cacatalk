@@ -33,19 +33,16 @@
 #include "common_image.h"
 #include "caca_socket.h"
 
+//TODO: move to header file
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 // ******** Socket handlers  **********
 void * send_chat(void * arguments);
 void * receive_chat(void * arguments);
-
 // ----------------------------
-
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname);
-int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd);
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recv_vid_fd, Window *win, char * peer_hostname);
+int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, Window *win, int sockfd);
 static void grab_messy(caca_canvas_t *cv, caca_display_t *dp, char *dev_name, int img_width, int img_height, int sockfd);
-
-void set_window(int fd, Window *win);
-void xioctl(int fh, int request, void *arg);
+void set_window(int fd, unsigned short video_lines, Window *win);
 
 int main(int argc, char **argv)
 {
@@ -59,7 +56,6 @@ int main(int argc, char **argv)
   char * dev_name;
   int is_connected = 0;
 //  pthread_t threads[NUM_THREADS];
-  set_window(STDIN_FILENO, &win); // Create a window object in order to obtain dimensions
 
   options *arg_opts;
   arg_opts = (options *)malloc(sizeof(options));
@@ -77,6 +73,8 @@ int main(int argc, char **argv)
   dev_name = arg_opts->video_device_name;
   // ---------------------------------------------------
 
+  set_window(STDIN_FILENO, lines_of_video, &win); // Create a window object in order to obtain dimensions
+
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
   int listenfd;
@@ -86,8 +84,6 @@ int main(int argc, char **argv)
   static struct sockaddr_in server_addr_to_connect;
   socklen_t clilen = sizeof(client_addr_accepted);
   char address_buffer_v4[INET_ADDRSTRLEN] = "";
-  pid_t childpid = -1;
-  //void sig_chld(int);
 
   // Solution to obtain interface address(es):
   print_IP_addresses();
@@ -114,7 +110,7 @@ int main(int argc, char **argv)
     ERROR_EXIT(" listen call failed", 1)
   }
 
-  Signal(SIGCHLD, on_sigchld);
+  Signal(SIGCHLD, on_sigchld); // TODO: Since we don't have children, handle your own signals with house keeping
   // ----------------------------------------------------------------------
 
 //  cv = caca_create_canvas(80, 24);
@@ -141,8 +137,12 @@ int main(int argc, char **argv)
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
   caca_clear_canvas(cv);
 
-  // Main menu //TODO
+  // Main menu //TODO:
+                // v: allow turning video on,off
+                // a: set address (or name) of peer for connecting to
+                // c: enter chat room
 //  display_menu();
+
   caca_refresh_display(dp);
 
   char label_name_of_peer[MAXHOSTNAMELEN] = ""; // Temp debug label
@@ -195,7 +195,12 @@ int main(int argc, char **argv)
               {
                 // Attention: needs to have static memory for server
                 connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect, PORT);
-                if(connfd > 0) // set nonblocking
+                // TODO: use this instead:
+                //connfd = inet_connect(arg_opts->peer_name, PORT, SOCK_STREAM);
+
+                if (connfd == -1)
+                    perror("main: Could not connect to server socket");
+                if(connfd > 0)
                 {
                     recvfd = dup(connfd);
 
@@ -307,7 +312,7 @@ int main(int argc, char **argv)
       caca_clear_canvas(cv);
 
       if (key_choice == 'v')
-        demo(cv, dp, vid_params, connfd);
+        demo(cv, dp, vid_params, &win, recvfd);
 //        demo(cv, dp, dev_name, img_width, img_height, connfd); // Using grab_messy
 
       if (key_choice == 'c')
@@ -352,16 +357,18 @@ int main(int argc, char **argv)
   return 0;
 }
 
-int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *win, char * peer_hostname)
+int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recv_vid_fd, Window *win, char * peer_hostname)
 {
-  //  set_non_block(sendfd); // FIXME: check that it's working
-  //  set_non_block(recvfd); // FIXME: check that it's working
+  int video_area = 2 * win->cols * win->rows; // A safe value for the receiving video buffer
+  void *video_in_buffer = NULL;
+  video_in_buffer = malloc(video_area);
+  unsigned int new_recv_video_bytes = 0; // Indicates when the size of a new video frame
 
   fd_set             readset, writeset;
   int                maxfd;
   char label_recv[MAXHOSTNAMELEN];
   int text_buffer_size = (MIN(win->cols, BUFFER_SIZE)) - 2; // Leave padding (margin)
-  unsigned int row_offset_recv = 1;
+  unsigned int row_offset_recv = 1+win->video_lines;
   unsigned int row_offset_self = row_offset_recv+TEXT_ENTRIES+1;
   unsigned int col_offset = 1;
   char * peer_username = "test_peer"; // TODO obtain the info
@@ -385,11 +392,6 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *
       timeout.tv_usec = 1000; // microseconds
   }
 
-  // Create datagram sockets for sending receiving video
-  int recv_video_fd = dup(sendfd);
-  int send_video_fd = dup(sendfd);
-
-
   // ------------------ Fill argument structures  --------------------------------
   // Sender arguments
   struct thread_arg_struct chat_send_args;
@@ -405,7 +407,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *
 
   // Receiver arguments
   struct thread_arg_struct chat_recv_args;
-  chat_recv_args.socketfd = recvfd;
+  chat_recv_args.socketfd = recv_vid_fd;
   chat_recv_args.text_buffer_size = text_buffer_size;
   chat_recv_args.row_offset =  row_offset_recv;
   chat_recv_args.col_offset =  col_offset;
@@ -453,46 +455,60 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *
   }
 
       maxfd = MAXFD(fileno(stdin), sendfd) +1; // FIXME: here is the problem? chicken vs egg case
-//      maxfd = MAXFD(fileno(stdin), recvfd) +1; // FIXME: here is the problem? chicken vs egg case
+//      maxfd = MAXFD(fileno(stdin), recv_vid_fd) +1;
 
   while (running)
   {
-    // Important:
-    // Since these structures are modified by the call,
-    // we must ensure that we reinitialize them if we are repeatedly calling select() from within a loop.)
+    if(sendfd > 0)
+    {
+      // Important:
+      // Since these structures are modified by the call,
+      // we must ensure that we reinitialize them if we are repeatedly calling select() from within a loop.)
       FD_ZERO(&readset);
       FD_ZERO(&writeset);
-//      FD_SET(recvfd, &readset);
+      FD_SET(recv_vid_fd, &readset);
       FD_SET(sendfd, &readset);
       FD_SET(sendfd, &writeset); // FIXME??? should I use 2 sockets?
 
-    if ( select( maxfd, &readset, &writeset, NULL, pto ) > 0 )
-    {
-//        if ( FD_ISSET(recvfd, &readset))
+      if ( select( maxfd, &readset, &writeset, NULL, pto ) > 0 )
+      {
         if ( FD_ISSET(sendfd, &readset))
         {
           memset(recline, '\0', MAXLINE);
-//          new_recv_entry_bytes = recv(recvfd, recline, MAXLINE, 0); // FIXME
-          new_recv_entry_bytes = recv(sendfd, recline, MAXLINE, 0); // FIXME
+          new_recv_entry_bytes = recv(sendfd, recline, MAXLINE, 0);
+        }
+
+        if ( FD_ISSET(recv_vid_fd, &readset))
+        {
+          memset(video_in_buffer, '\0', video_area);
+          new_recv_video_bytes = recv(recv_vid_fd, video_in_buffer, video_area, 0);
         }
 
         if ( FD_ISSET(sendfd, &writeset))
         {
           if (entries_self[e].size > 0 && newline_entered == 1 && send_succesful == 0)
           {
-            int sent_bytes = send(sendfd, sendline, entries_self[e].size, 0); // FIXME: check if sent & correct with true socket name
+            int sent_bytes = send(sendfd, sendline, entries_self[e].size, 0);
             if(sent_bytes >= 0)
             {
               send_succesful = 1;
             }
           }
         }
+      }
+      else
+      {
+        char msg_select_ready[MAXLINE] = "Select is NOT ready";
+        caca_put_str(cv, 0, row_offset_self+TEXT_ENTRIES+1, msg_select_ready);
+      }
     }
-    else
+
+    // Update peer (received) video
+    if(new_recv_video_bytes > 0)
     {
-      char msg_select_ready[MAXLINE] = "Select is NOT ready";
-      caca_put_str(cv, 0, row_offset_self+TEXT_ENTRIES+1, msg_select_ready);
+      caca_put_str(cv, 0, 0, video_in_buffer);
     }
+    new_recv_video_bytes = 0;  // always reset (because we must have handled the buffer already)
 
     // Update peer (received) entries
     if(new_recv_entry_bytes > 0 || first_time == 1)
@@ -674,15 +690,16 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recvfd, Window *
   }
 
   free(sendline);
+  free(video_in_buffer);
 
   return 0;
 }
 
-int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int sockfd)
+int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, Window *win, int sockfd)
 {
   fd_set fds;
   struct timeval tv;
-  unsigned int r;
+  unsigned int r, rows, cols;
   void *export;
   size_t exported_bytes;
   struct image *im; // Image struct to use in caca
@@ -763,10 +780,21 @@ int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, int s
 
       //unload_image(im); // Enable it if using memcpy in the loading
 
+      // Allowable exportable region dimensions (so export doesn't fail)
+      if(win->cols > vid_params->cv_cols)
+        cols = vid_params->cv_cols;
+      else
+        cols = win->cols;
+
+      if(win->rows > vid_params->cv_rows)
+        rows = vid_params->cv_rows;
+      else
+        rows = win->rows;
+
 //      /* TODO: for now disabled (not exporting
       // This is what needs to be sent through the socket
 //      export = caca_export_canvas_to_memory(cv, vid_params->caca_format ? format : "ansi", &exported_bytes);
-      export = caca_export_area_to_memory(cv, 0, 0, vid_params->cv_cols, vid_params->cv_rows, vid_params->caca_format ? vid_params->caca_format : "ansi", &exported_bytes);
+      export = caca_export_area_to_memory(cv, 0, 0, cols, rows, vid_params->caca_format ? vid_params->caca_format : "ansi", &exported_bytes);
       if (!export)
       {
         fprintf(stderr, "grab: Can't export to format '%s'\n", vid_params->caca_format);
@@ -1033,6 +1061,10 @@ int set_video(video_params *vid_params, char *dev_name, unsigned int cv_height_f
 {
   unsigned int i, n_buffers;
 
+  // We don't know yet if setting the video device will succeed, so set the "not okay" flag initially
+  vid_params->is_ok = 0;
+  vid_params->is_on = 0; // Streaming is not on yet
+
   // ------ Arbitrary settings:
   vid_params->caca_format = "ansi";
   vid_params->caca_dither = "fstein";
@@ -1112,15 +1144,53 @@ int set_video(video_params *vid_params, char *dev_name, unsigned int cv_height_f
     xioctl(vid_params->v4l_fd, VIDIOC_QBUF, &(vid_params->buf));
   }
 
-  xioctl(vid_params->v4l_fd, VIDIOC_STREAMON, &(vid_params->type));
+  // If we got passed these tests and settings, then the video device is on and readily streaming
+  vid_params->is_ok = 1;
 
-  return vid_params->v4l_fd;
+  // Last, turn the stream on
+  turn_video_stream_on(vid_params);
+
+  return vid_params->is_ok;
+}
+
+
+int turn_video_stream_on(video_params *vid_params)
+{
+  vid_params->is_on = 0; // Reset on/off flag
+
+  if(vid_params->is_ok == 1)
+  {
+    int status = xioctl(vid_params->v4l_fd, VIDIOC_STREAMON, &(vid_params->type));
+    if(status == 0)
+      vid_params->is_on = 1; // Set flag indicating streaming is on
+  }
+
+  return vid_params->is_on;
+}
+
+int turn_video_stream_off(video_params *vid_params)
+{
+  vid_params->is_on = -1; // Reset on/off flag to the undefined state
+
+  if(vid_params->is_ok == 1)
+  {
+    int status = xioctl(vid_params->v4l_fd, VIDIOC_STREAMOFF, &(vid_params->type));
+    if(status == 0)
+      vid_params->is_on = 0; // Set flag indicating streaming is off
+  }
+
+  return vid_params->is_on;
 }
 
 void close_video_stream(video_params *vid_params)
 {
   unsigned int i;
-  xioctl(vid_params->v4l_fd, VIDIOC_STREAMOFF, &(vid_params->type));
+
+  if(vid_params->is_ok == 1)
+  {
+    // Turn off stream just in case it slipped through the code
+    xioctl(vid_params->v4l_fd, VIDIOC_STREAMOFF, &(vid_params->type));
+  }
 
   for (i = 0; i < vid_params->number_of_buffers; ++i)
     v4l2_munmap(vid_params->buffers[i].start, vid_params->buffers[i].length);
@@ -1130,23 +1200,23 @@ void close_video_stream(video_params *vid_params)
   free(vid_params);
 }
 
-void xioctl(int fh, int request, void *arg)
+int xioctl(int fd, int request, void *arg)
 {
   int r;
 
   do
   {
-    r = v4l2_ioctl(fh, request, arg);
+    r = v4l2_ioctl(fd, request, arg);
   } while (r == -1 && ((errno == EINTR) || (errno == EAGAIN)));
 
   if (r == -1)
   {
     fprintf(stderr, "error %d, %s\n", errno, strerror(errno));
-    exit(EXIT_FAILURE);
   }
+  return r;
 }
 
-void set_window(int fd, Window *win)
+void set_window(int fd, unsigned short video_lines, Window *win)
 {
   struct winsize size;
 
@@ -1157,6 +1227,8 @@ void set_window(int fd, Window *win)
   }
   win->rows = size.ws_row;
   win->cols = size.ws_col;
+  win->video_lines = video_lines;
+  win->video_cols = video_lines; // Just a safe square value (temporary)
 }
 
 // ******************** THREADS *************************
@@ -1441,3 +1513,53 @@ void * receive_chat(void * arguments)
 
   return NULL;
 }
+
+int get_options(int argc, char **argv, options * opt)
+  {
+    opterr = 0;
+    int c;
+
+    // Initialize defaults
+    strcpy(opt->video_device_name, "/dev/video0\0");
+    memset(opt->peer_name, '\0', MAXHOSTNAMELEN);
+    opt->is_server = 0; // Socket client is the default behavior
+
+    while ((c = getopt(argc, argv, "sv:p:")) != -1) // The ":" next to a flag indicates to expect a value
+    {
+      switch (c)
+      {
+        case 's':
+          opt->is_server = 1;
+          break;
+        case 'v':
+          strcpy(opt->video_device_name, optarg);
+          break;
+        case 'p':
+          strcpy(opt->peer_name, optarg);
+          break;
+        case '?':
+        {
+          if (optopt == 'v' || optopt == 'p')
+            fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+          else if (isprint (optopt))
+            fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+          else
+            fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+          return -1;
+        }
+        default:
+          abort();
+          break;
+      }
+    }
+
+    // Get non-option arguments (usernames, in this case)
+    /* None so far
+     for (int index = optind; index < argc; index++)
+     {
+     argv[index];
+     }
+     */
+
+    return 0;
+  }

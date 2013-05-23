@@ -40,6 +40,18 @@
 
 void set_non_block(int fd );
 int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server, in_port_t port);
+/** @brief Create socket and connect it to the address specified by
+ *      'host' + 'service'/'type'.
+ *@note Function based on Michael Kerrisk's source code for his book "The Linux Programming Interface"
+ *
+ *@param host           NULL for loopback IP address, or a host name or numeric IP address
+ *@param service        either a name or a port number
+ *@param type           either SOCK_STREAM or SOCK_DGRAM
+ *
+ *@return socket descriptor on success, or -1 on error
+ */
+int inet_connect(const char *host, const char *service, int type);
+
 int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline, int send_bytes);
 void print_IP_addresses();
 // The following typedef simplifies the function definition after it
