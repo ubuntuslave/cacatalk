@@ -1,14 +1,11 @@
-/*
- *  Shared header file for caca_socket client-to-client connection
+/** \file caca_socket.h
+ *  \author Carlos Jaramillo <cjaramillo@gc.cuny.edu>
+ *  \brief The caca_socket public header based on sockets usef by \cacatalk .
  *
- *  Copyright (c) 2013 Carlos Jaramillo <cjaramillo@gc.cuny.edu>
- *                All Rights Reserved
- *
- *  This program is free software. It comes without any warranty, to
- *  the extent permitted by applicable law. You can redistribute it
- *  and/or modify it under the terms of the Do What the Fuck You Want
- *  to Public License, Version 2, as published by Sam Hocevar. See
- *  http://www.wtfpl.net/ for more details.
+ Course         : CS 82010 UNIX Application Development (Spring 2013)
+ Created on     : May 24, 2013
+ Description    : A very simple video and text chat interface (peer-to-peer (non centralized)) based on libcaca
+ License        : ​Do What The Fuck You Want To Public License (WTFPL)
  */
 
 #ifndef CACA_SOCKET_H_
@@ -39,8 +36,17 @@
 #define LISTEN_QUEUE_SIZE   5
 #define  MAXFD( _x, _y)  ((_x)>(_y)?(_x):(_y))
 
-void set_non_block(int fd );
+void set_non_block(int fd);
+/** TODO: description
+ *
+ * @param peer_hostname The IP address or hostname as a human readable character string
+ * @param server The socket address structure to be realized based on the connection to the peer_hostname
+ * @param port  The port number to connect to (assumes the other side is listening)
+ *
+ * @return socket file descriptor number. Or -1 if not connected.
+ */
 int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server, in_port_t port);
+
 /** @brief Create socket and connect it to the address specified by
  *      'host' + 'service'/'type'.
  *@note Function based on Michael Kerrisk's source code for his book "The Linux Programming Interface"
@@ -61,10 +67,14 @@ int inet_connect(const char *host, const char *service, int type);
  */
 void get_IP_addresses(char *presentation_addr, int print);
 
-// The following typedef simplifies the function definition after it
+/** @brief The following typedef simplifies the function definition after it
+ *
+ */
 typedef void Sigfunc(int); // for signal handlers
 
-// override existing signal function to handle non-BSD systems
+/** @brief override existing signal function to handle non-BSD systems
+ *
+ */
 Sigfunc* Signal(int signo, Sigfunc *func);
 
 // Signal handlers

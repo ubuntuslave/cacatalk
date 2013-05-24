@@ -1,22 +1,11 @@
-/*
- * grabber.cpp
- *
- *  Created on: May 7, 2013
- *      Author: carlos
- */
-
-/* V4L2 video picture grabber
- Copyright (C) 2009 Mauro Carvalho Chehab <mchehab@infradead.org>
-
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation version 2 of the License.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- */
+/******************************************************************************
+ Title          : cacatalk.cpp
+ Author         : Carlos Jaramillo
+ Course         : CS 82010 UNIX Application Development (Spring 2013)
+ Created on     : May 24, 2013
+ Description    : A very simple video and text chat interface (peer-to-peer (non centralized)) based on libcaca
+ License        : ​Do What The Fuck You Want To Public License (WTFPL)
+ ******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,13 +21,6 @@
 #include "cacatalk.h"
 #include "common_image.h"
 #include "caca_socket.h"
-
-//TODO: move to header file
-#define CLEAR(x) memset(&(x), 0, sizeof(x))
-// ******** Threads  **********
-void * send_video_thread(void * arguments);
-// ----------------------------
-int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window *win, char * peer_hostname);
 
 // GLOBALS:
 video_out_args g_video_out;
@@ -149,7 +131,7 @@ int main(int argc, char **argv)
     ERROR_EXIT(" listen call failed", 1)
   }
 
-  Signal(SIGCHLD, on_sigchld); // TODO: Since we don't have children, handle your own signals with house keeping
+  //Signal(SIGCHLD, on_sigchld); // TODO: Since we don't have children, handle your own signals with house keeping
   // ----------------------------------------------------------------------
 
   dp = caca_create_display_with_driver(cv, arg_opts->driver_options[arg_opts->driver_choice - 1]);
@@ -205,13 +187,13 @@ int main(int argc, char **argv)
           case 'a':
           case 'A':
             key_choice = 'a';
-            demo = set_peer_address;
+            demo = (void *)set_peer_address;
             break;
           case CACA_KEY_RETURN:
           case 'd':
           case 'D':
             key_choice = 'd';
-            demo = chat;
+            demo = (void *)chat;
             break;
           case 'c':
           case 'C':
@@ -268,7 +250,7 @@ int main(int argc, char **argv)
           case 'v':
           case 'V':
             key_choice = 'v';
-            demo = change_video_device;
+            demo = (void *) change_video_device;
             break;
         }
       }
@@ -797,15 +779,15 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
   vid_params->is_ok = 0;
   vid_params->is_on = 0; // Streaming is not "on" yet
 
-  if(strlen(dev_name) > 0)
+  if (strlen(dev_name) > 0)
   {
     // ------ Arbitrary settings:
     vid_params->caca_format = win->caca_format;
     vid_params->caca_dither = "fstein";
-    vid_params->number_of_buffers = 2;// Arbitrary double buffer
+    vid_params->number_of_buffers = 2; // Arbitrary double buffer
     vid_params->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     vid_params->memory = V4L2_MEMORY_MMAP;
-    unsigned int font_width = 6, font_height = 10;// FIXME: purely arbitrary based on the usual ansi format for terminals
+    unsigned int font_width = 6, font_height = 10; // FIXME: purely arbitrary based on the usual ansi format for terminals
     // -------------------------------------------------------
 
     vid_params->img_width = img_width;
@@ -820,7 +802,7 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
 
     strcpy(vid_params->dev_name, dev_name);
     vid_params->v4l_fd = v4l2_open(vid_params->dev_name, O_RDWR | O_NONBLOCK, 0);
-    if(vid_params->v4l_fd > 0)
+    if (vid_params->v4l_fd > 0)
     {
       CLEAR(vid_params->fmt);
       vid_params->fmt.type = vid_params->type;
@@ -835,8 +817,8 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
         exit(EXIT_FAILURE);
       }
       if ((vid_params->fmt.fmt.pix.width != img_width) || (vid_params->fmt.fmt.pix.height != img_height))
-      printf("Warning: driver is sending image at %dx%d\n", vid_params->fmt.fmt.pix.width,
-          vid_params->fmt.fmt.pix.height);
+        printf("Warning: driver is sending image at %dx%d\n", vid_params->fmt.fmt.pix.width,
+               vid_params->fmt.fmt.pix.height);
 
       CLEAR(vid_params->req);
       vid_params->req.count = vid_params->number_of_buffers;
@@ -857,8 +839,8 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
         xioctl(vid_params->v4l_fd, VIDIOC_QUERYBUF, &(vid_params->buf));
 
         vid_params->buffers[n_buffers].length = vid_params->buf.length;
-        vid_params->buffers[n_buffers].start = v4l2_mmap(NULL, vid_params->buf.length, PROT_READ | PROT_WRITE, MAP_SHARED,
-            vid_params->v4l_fd, vid_params->buf.m.offset);
+        vid_params->buffers[n_buffers].start = v4l2_mmap(NULL, vid_params->buf.length, PROT_READ | PROT_WRITE,
+                                                         MAP_SHARED, vid_params->v4l_fd, vid_params->buf.m.offset);
 
         if (MAP_FAILED == vid_params->buffers[n_buffers].start)
         {
