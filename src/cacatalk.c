@@ -67,7 +67,7 @@ int main(int argc, char **argv)
   }
 
   // --------------- Video related ---------------------------------
-  unsigned int lines_of_video = 10; // Arbitrary number of lines // TODO: parametrize
+  unsigned int lines_of_video = 16; // Arbitrary number of lines // TODO: parametrize
   video_params *vid_params;
   vid_params = (video_params *)malloc(sizeof(video_params));
   dev_name = arg_opts->video_device_name;
@@ -77,35 +77,51 @@ int main(int argc, char **argv)
 
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
-  int listenfd;
-  int connfd = -1; // Initial value for non-existing connection
-  int recvfd = -1; // Socket for receiving.
-  struct sockaddr_in client_addr_accepted, server_addr_that_listens;
+  int listen_chat_fd, listen_video_fd; // Listening socket filedescriptors for chat and video stream
+  int sock_chat_fd = -1; // Initial value for non-existing connection
+  int sock_vid_fd = -1; // Socket for receiving and sending video stream.
+  struct sockaddr_in client_addr;
+  struct sockaddr_in server_addr;
   static struct sockaddr_in server_addr_to_connect;
-  socklen_t clilen = sizeof(client_addr_accepted);
+  socklen_t clilen = sizeof(client_addr);
   char address_buffer_v4[INET_ADDRSTRLEN] = "";
 
   // Solution to obtain interface address(es):
   print_IP_addresses();
 
-  if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  if ((listen_chat_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
   {
-    ERROR_EXIT("socket call failed", 1)
+    ERROR_EXIT(" chat: server socket call failed", 1)
+  }
+  if ((listen_video_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  {
+    ERROR_EXIT(" video: server socket call failed", 1)
   }
 
-  bzero(&server_addr_that_listens, sizeof(server_addr_that_listens));
-  server_addr_that_listens.sin_family = AF_INET;
-  server_addr_that_listens.sin_addr.s_addr = htonl(INADDR_ANY );
-  server_addr_that_listens.sin_port = PORT;
+  bzero(&server_addr, sizeof(server_addr));
+  bzero(&client_addr, sizeof(client_addr));
+  server_addr.sin_family = AF_INET;
+  client_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = htonl(INADDR_ANY );
+  client_addr.sin_addr.s_addr = htonl(INADDR_ANY );
+  server_addr.sin_port = PORT_CHAT;
+  client_addr.sin_port = PORT_VIDEO;
 
-  set_non_block(listenfd); // Set it as nonblocking descriptor (Not working)
+  set_non_block(listen_chat_fd); // Set it as nonblocking descriptor
+  // On the other hand the listener to video (on the client side) will be blocking
 
-  if (bind(listenfd, SOCKADDR &server_addr_that_listens, sizeof(server_addr_that_listens)) == -1)
+  if (bind(listen_chat_fd, SOCKADDR &server_addr, sizeof(server_addr)) == -1)
   {
-    ERROR_EXIT(" bind call failed", 1)
+    ERROR_EXIT(" chat: server socket binding call failed", 1)
+  }
+//  if (bind(listen_video_fd, SOCKADDR &server_addr_video, sizeof(server_addr_video)) == -1)
+  if (bind(listen_video_fd, SOCKADDR &client_addr, sizeof(client_addr)) == -1)
+  {
+    ERROR_EXIT(" video: client socket binding call failed", 1)
   }
 
-  if (-1 == listen(listenfd, LISTEN_QUEUE_SIZE))
+  // We will only listen on the chat socket (the video socket will get connected immediately after accepting a connnection)
+  if (-1 == listen(listen_chat_fd, LISTEN_QUEUE_SIZE))
   {
     ERROR_EXIT(" listen call failed", 1)
   }
@@ -187,31 +203,44 @@ int main(int argc, char **argv)
           case 'i':
           case 'I':
             key_choice = 'i';
-            if (connfd < 0) // Only attempt a connection when server mode hasn't accepted one already
+            if (sock_chat_fd < 0) // Only attempt a connection when server mode hasn't accepted one already
             {
               // Initialize connection
               // Check if there is a host name on command line; if not use default
               if ((strlen(arg_opts->peer_name) > 0) && (is_connected == 0))
               {
                 // Attention: needs to have static memory for server
-                connfd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect, PORT);
+                sock_chat_fd = connect_to_peer_socket(arg_opts->peer_name, &server_addr_to_connect, PORT_CHAT);
                 // TODO: use this instead:
                 //connfd = inet_connect(arg_opts->peer_name, PORT, SOCK_STREAM);
 
-                if (connfd == -1)
+                if (sock_chat_fd == -1)
                   perror("main: Could not connect to server socket");
-                if (connfd > 0)
+                if (sock_chat_fd > 0)
                 {
-                  recvfd = dup(connfd);
+                  // We will only listen on the chat socket (the video socket will get connected immediately after accepting a connnection)
+                    if (-1 == listen(listen_video_fd, LISTEN_QUEUE_SIZE))
+                    {
+                      ERROR_EXIT(" video: listen (as client) call failed", 1)
+                    }
+
+                    if ((sock_vid_fd = accept(listen_video_fd, SOCKADDR &server_addr, sizeof(server_addr))) < 0)
+                    {
+                      if (EINTR == errno)
+                        continue; // back to loop
+                      // If blocking:
+                      else
+                        ERROR_EXIT(" video: accept error (as client)", 1);
+                    }
 
                   void * peer_addr_ptr = NULL;
                   if (server_addr_to_connect.sin_family == AF_INET) // check it is IP4
                   { // is a valid IP4 Address
-                    peer_addr_ptr = (struct sockaddr_in *)&(server_addr_to_connect.sin_addr);
+                    peer_addr_ptr = (struct sockaddr_in *)&(server_addr.sin_addr);
                     // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
                     inet_ntop(AF_INET, peer_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
 
-                    sprintf(label_name_of_peer, "%s@%s", "host", address_buffer_v4); // TODO:temp
+                    sprintf(label_name_of_peer, "%s@%s:%d", "host", address_buffer_v4, server_addr.sin_port);
                   }
                   is_connected = 1; // To indicate not longer trying to connect
                 }
@@ -240,7 +269,7 @@ int main(int argc, char **argv)
     {
       // Recall: non-blocking accept has been set for the listenfd
 //      if ((recvfd = accept(listenfd, SOCKADDR &client_addr_accepted, &clilen)) < 0)
-      if ((connfd = accept(listenfd, SOCKADDR &client_addr_accepted, &clilen)) < 0)
+      if ((sock_chat_fd = accept(listen_chat_fd, SOCKADDR &client_addr, &clilen)) < 0)
       {
         if (EINTR == errno)
           continue; // back to loop
@@ -250,18 +279,17 @@ int main(int argc, char **argv)
       }
       else
       { // A connection has been accepted
-
-//          connfd = dup(recvfd);
-        recvfd = dup(connfd);
+        client_addr.sin_port = PORT_VIDEO; // Just modify the port number for video streaming (FIXME: may be wrong)
+        sock_vid_fd = connect(listen_video_fd, SOCKADDR &client_addr, clilen);
 
         void * peer_addr_ptr = NULL;
-        if (client_addr_accepted.sin_family == AF_INET) // check it is IP4
+        if (client_addr.sin_family == AF_INET) // check it is IP4
         { // is a valid IP4 Address
-          peer_addr_ptr = (struct sockaddr_in *)&(client_addr_accepted.sin_addr);
+          peer_addr_ptr = (struct sockaddr_in *)&(client_addr.sin_addr);
           // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
           inet_ntop(AF_INET, peer_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
 
-          sprintf(label_name_of_peer, "%s@%s", "server", address_buffer_v4); // TODO:temp
+          sprintf(label_name_of_peer, "%s@%s:%d", "server", address_buffer_v4, server_addr.sin_port); // TODO:temp
         }
 
         is_connected = 1; // To indicate not longer trying to connect
@@ -312,13 +340,12 @@ int main(int argc, char **argv)
       caca_clear_canvas(cv);
 
       if (key_choice == 'v')
-        demo(cv, dp, vid_params, &win, connfd); // FIXME: using same socket
+        demo(cv, dp, vid_params, &win, sock_vid_fd); // FIXME: using same socket
 //        demo(cv, dp, vid_params, &win, recvfd);
-//        demo(cv, dp, dev_name, img_width, img_height, connfd); // Using grab_messy
 
       if (key_choice == 'c')
 //        demo(cv, dp, connfd, recvfd, &win, address_buffer_v4);
-        demo(cv, dp, connfd, connfd, &win, address_buffer_v4); // Using same socket
+        demo(cv, dp, sock_chat_fd, sock_vid_fd, &win, address_buffer_v4); // Using same socket
 
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
 
@@ -352,17 +379,16 @@ int main(int argc, char **argv)
 
   close_video_stream(vid_params);
   // Close sockets:
-  close(connfd); // close socket
-  close(recvfd); // close socket
-  close(listenfd);
+  close(sock_chat_fd); // close socket
+  close(sock_vid_fd); // close socket
+  close(listen_chat_fd);
 
   return 0;
 }
 
 int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recv_vid_fd, Window *win, char * peer_hostname)
 {
-//  int video_area = 2 * win->cols * win->rows; // A safe value for the receiving video buffer
-  int video_area = MAXLINE; // FIXME: with less than this?
+  int video_area = 16 * win->video_cols * win->video_lines; // A safe value for the receiving video buffer
 
   char *video_in_buffer = NULL;
   video_in_buffer = malloc(video_area);
@@ -524,12 +550,12 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int sendfd, int recv_vid_fd, Win
     // Update peer (received) video
     if (new_recv_video_bytes > 0)
     {
-      ssize_t imported_bytes = caca_import_area_from_memory(cv, 0, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
-      caca_fill_box(cv, col_offset, row_offset_recv - 1, text_buffer_size, 1, ' ');
+      ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
+      caca_fill_box(cv, col_offset, win->video_lines, text_buffer_size, 1, ' ');
       char import_label[100] = "";
       sprintf(import_label, "Received= %d bytes, Imported %d bytes of caca video (AOI:%d x %d)", new_recv_video_bytes,
               imported_bytes, win->cols, win->video_lines);
-      caca_put_str(cv, col_offset, row_offset_recv - 1, import_label);
+      caca_put_str(cv, col_offset, win->video_lines, import_label);
     }
     new_recv_video_bytes = 0; // always reset (because we must have handled the buffer already)
 
@@ -1306,7 +1332,9 @@ void set_window(int fd, unsigned short video_lines, Window *win)
   win->rows = size.ws_row;
   win->cols = size.ws_col;
   win->video_lines = video_lines;
-  win->video_cols = video_lines; // Just a safe square value (temporary)
+  // Default assuming a 4:3 aspect ratio and 10:6 font
+  float aspect_ratio = (float) 4 / 3 * (float) 10 / 6;
+  win->video_cols = (unsigned int)(aspect_ratio * (float)video_lines);
   win->caca_format = "caca"; // Arbitrary format for caca export/import
 }
 
