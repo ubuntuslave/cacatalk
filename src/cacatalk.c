@@ -39,7 +39,6 @@
 void * send_video_thread(void * arguments);
 // ----------------------------
 int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window *win, char * peer_hostname);
-int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, Window *win, int sockfd);
 void set_window(int fd, unsigned short video_lines, Window *win);
 
 // GLOBALS:
@@ -333,16 +332,17 @@ int main(int argc, char **argv)
     }
   }
 
-  // Clean up caca
-  caca_free_display(dp);
-  caca_free_canvas(cv);
-
-  close_video_stream(vid_params);
   // Close sockets:
   close(sock_chat_fd);
   close(sock_vid_fd);
   close(listen_chat_fd);
   close(listen_video_fd);
+
+  // Clean up caca
+  caca_free_display(dp);
+  caca_free_canvas(cv);
+
+  close_video_stream(vid_params);
 
   pthread_exit(NULL); // FIXME: perhaps it should join a thread, for instance
   // return pthread_join(some_thread, NULL); // Wait until thread is finished
@@ -398,6 +398,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
   int yo = caca_get_canvas_height(cv) - 2;
   int video_area = 16 * win->video_cols * win->video_lines; // A safe value for the receiving video buffer
 
+  turn_video_stream_on(g_video_out.vid_params);
   char *video_in_buffer = NULL;
   video_in_buffer = malloc(video_area);
   unsigned int new_recv_video_bytes = 0; // Indicates when the size of a new video frame
@@ -556,8 +557,9 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     // Update peer (received) video
     if (new_recv_video_bytes > 0)
     {
-//      ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
-      ssize_t imported_bytes = caca_import_area_from_memory(cv, caca_get_canvas_width(cv)/2-win->cols/2, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
+      // TODO: try to center window
+      ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes, win->caca_format);
+      //      ssize_t imported_bytes = caca_import_area_from_memory(cv, caca_get_canvas_width(cv)/2-win->cols/2, 0, video_in_buffer, new_recv_video_bytes, win->caca_format);
       caca_fill_box(cv, col_offset, win->video_lines, text_buffer_size, 1, ' ');
       char import_label[100] = "";
       sprintf(import_label, "Received= %d bytes, Imported %d bytes of caca video (%d x %d)", new_recv_video_bytes,
@@ -753,190 +755,9 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
 
   }
 
+  turn_video_stream_off(g_video_out.vid_params);
   free(sendline);
   free(video_in_buffer);
-
-  return 0;
-}
-
-int grab(caca_canvas_t *cv, caca_display_t *dp, video_params * vid_params, Window *win, int sockfd)
-{
-  fd_set fds;
-  fd_set sock_writeset;
-  int sock_maxfd;
-  struct timeval tv;
-  struct timeval socket_timeout;
-  struct timeval *pto;
-  unsigned int r, rows, cols;
-  void *export;
-  size_t exported_bytes;
-  struct image *im; // Image struct to use in caca
-  int quit = 0;
-
-  pto = &socket_timeout;
-  socket_timeout.tv_sec = 0; // seconds
-  socket_timeout.tv_usec = 90000; // microseconds FIXME
-
-  // Allowable exportable region dimensions (so export doesn't fail)
-  if (win->cols > vid_params->cv_cols)
-    cols = vid_params->cv_cols;
-  else
-    cols = win->cols;
-
-  if (win->rows > vid_params->cv_rows)
-    rows = vid_params->cv_rows;
-  else
-    rows = win->rows;
-
-  // Go (main loop)
-  while (!quit)
-  {
-    caca_event_t ev;
-
-    while (caca_get_event(dp, CACA_EVENT_ANY, &ev, 0))
-    {
-      if (caca_get_event_type(&ev) & CACA_EVENT_KEY_PRESS)
-      {
-        switch (caca_get_event_key_ch(&ev))
-        {
-          case 'q':
-          case 'Q':
-          case CACA_KEY_ESCAPE:
-            quit = 1;
-            break;
-        }
-
-      }
-    }
-
-    if (!quit)
-    {
-      do
-      {
-        FD_ZERO(&fds);
-        FD_SET(vid_params->v4l_fd, &fds);
-
-        // Timeout.
-        tv.tv_sec = 2;
-        tv.tv_usec = 0;
-
-        r = select(vid_params->v4l_fd + 1, &fds, NULL, NULL, &tv);
-      } while ((r == -1 && (errno = EINTR)));
-
-      if (r == -1)
-      {
-        perror("select");
-        return errno;
-      }
-
-      CLEAR(vid_params->buf);
-      vid_params->buf.type = vid_params->type;
-      vid_params->buf.memory = vid_params->memory;
-      xioctl(vid_params->v4l_fd, VIDIOC_DQBUF, &(vid_params->buf));
-
-      //-----------------------------------------
-      // Persistent loading
-      while( (im = load_image_from_V4L_buffer(&(vid_params->fmt), &(vid_params->buffers[vid_params->buf.index]),vid_params->buf.bytesused)) == NULL)
-      {
-        fprintf(stderr, "grab: Unable to load caca from V4L\n");
-      }
-
-      caca_clear_canvas(cv);
-      if (caca_set_dither_algorithm(im->dither, vid_params->caca_dither ? vid_params->caca_dither : "fstein"))
-      {
-        fprintf(stderr, "grab: Can't dither image with algorithm '%s'\n", vid_params->caca_dither);
-        unload_image(im);
-        caca_free_canvas(cv);
-        return -1;
-      }
-
-      if (vid_params->caca_brightness != -1)
-        caca_set_dither_brightness(im->dither, vid_params->caca_brightness);
-      if (vid_params->caca_contrast != -1)
-        caca_set_dither_contrast(im->dither, vid_params->caca_contrast);
-      if (vid_params->caca_gamma != -1)
-        caca_set_dither_gamma(im->dither, vid_params->caca_gamma);
-
-      caca_dither_bitmap(cv, 0, 0, vid_params->cv_cols, vid_params->cv_rows, im->dither, im->pixels);
-
-      //unload_image(im); // Enable it if using memcpy in the loading
-
-      if (sockfd > 0)
-      {
-        sock_maxfd = MAXFD(fileno(stdin), sockfd) + 1; // FIXME: here is the problem? chicken vs egg case
-
-        // Important:
-        // Since these structures are modified by the call,
-        // we must ensure that we reinitialize them if we are repeatedly calling select() from within a loop.)
-        FD_ZERO(&sock_writeset);
-        FD_SET(sockfd, &sock_writeset);
-
-        if (select(sock_maxfd, NULL, &sock_writeset, NULL, pto) > 0)
-        {
-
-          if (FD_ISSET(sockfd, &sock_writeset))
-          {
-            exported_bytes = 0; // clear number of bytes exported (assuming they all went through)
-            // This is what needs to be sent through the socket
-            //      export = caca_export_canvas_to_memory(cv, vid_params->caca_format ? format : "ansi", &exported_bytes);
-//            export = caca_export_area_to_memory(cv, 0, 0, cols, rows, vid_params->caca_format ? vid_params->caca_format : "ansi", &exported_bytes);
-            export = caca_export_area_to_memory(cv, 0, 0, cols, rows,
-                                                vid_params->caca_format ? vid_params->caca_format : "caca",
-                                                &exported_bytes);
-            if (!export)
-            {
-              fprintf(stderr, "grab: Can't export to format '%s'\n", vid_params->caca_format);
-            }
-            else
-            {
-              int sent_bytes = send(sockfd, export, exported_bytes, 0);
-
-              char sent_label[100] = "";
-              sprintf(sent_label, "Exported = %d bytes, Sent %d bytes (%dx%d) frame", exported_bytes, sent_bytes, cols,
-                      rows);
-              caca_put_str(cv, 0, rows + 3, sent_label);
-              free(export);
-            }
-#ifdef DEVELOP
-            caca_get_event(dp, CACA_EVENT_KEY_PRESS, NULL, -1);
-#endif
-          }
-        }
-      }
-
-      /* TODO: delete, just for testing
-      export = caca_export_area_to_memory(cv, 0, 0, cols, rows, vid_params->caca_format ? vid_params->caca_format : "utf8",
-                                              &exported_bytes);
-      if (!export)
-      {
-        fprintf(stderr, "grab: Can't export to format '%s'\n", vid_params->caca_format);
-      }
-      else
-      {
-        int imported_bytes = caca_import_area_from_memory(cv, 0, rows+10, export, exported_bytes, vid_params->caca_format ? vid_params->caca_format : "caca");
-
-        char exp_imp_label[100] = "";
-        sprintf(exp_imp_label, "Exported = %d bytes, Imported %d bytes (%dx%d) frame", exported_bytes, imported_bytes, cols,
-                rows);
-        caca_put_str(cv, 0, rows + 3, exp_imp_label);
-
-        free(export);
-      }
-      */
-
-      // TODO: Nice display margin:
-      // ------------------------------------------------------------------
-//       caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
-//       caca_draw_thin_box(cv, 1, 1, caca_get_canvas_width(cv) - 2, caca_get_canvas_height(cv) - 2);
-//       caca_printf(cv, 4, 1, "[%i.%i FPS]----", 1000000 / caca_get_display_time(dp),
-//       (10000000 / caca_get_display_time(dp)) % 10);
-      // ------------------------------------------------------------------
-
-      caca_refresh_display(dp);
-
-      xioctl(vid_params->v4l_fd, VIDIOC_QBUF, &(vid_params->buf));
-    }
-  }
 
   return 0;
 }
@@ -1070,11 +891,7 @@ void close_video_stream(video_params *vid_params)
 {
   unsigned int i;
 
-  if (vid_params->is_ok == 1)
-  {
-    // Turn off stream just in case it slipped through the code
-    xioctl(vid_params->v4l_fd, VIDIOC_STREAMOFF, &(vid_params->type));
-  }
+  turn_video_stream_off(vid_params);
 
   for (i = 0; i < vid_params->number_of_buffers; ++i)
     v4l2_munmap(vid_params->buffers[i].start, vid_params->buffers[i].length);
