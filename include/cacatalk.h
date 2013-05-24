@@ -69,10 +69,16 @@
 #define BUFFER_SIZE MAX_INPUT
 #define TEXT_ENTRIES 5
 #define NUM_THREADS  1 // just one for now
+
+/**
+ * @brief A buffer for text entry as uint32 characters used for putting characters in caca canvas
+ */
 typedef struct textentry
 {
-  uint32_t buffer[BUFFER_SIZE + 1];
-  unsigned int size, cursor, changed;
+  uint32_t buffer[BUFFER_SIZE + 1]; ///< The text buffer
+  unsigned int size;    ///< The number of characters in the buffer entry
+  unsigned int cursor;  ///< The text cursor possition in the entry (relative to the first character)
+  unsigned int changed; ///<  To indicate that a change to the buffer has been made.
 } textentry;
 
 /** @brief

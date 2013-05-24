@@ -31,12 +31,34 @@ int main(int argc, char **argv)
 
   caca_canvas_t *cv;
   caca_display_t *dp;
+  options *arg_opts;
+  arg_opts = (options *)malloc(sizeof(options));
+
+  if (get_options(argc, argv, arg_opts) == -1)
+  {
+    fprintf(stderr, "%s: unable to get option arguments\n", argv[0]);
+    return 1;
+  }
+
   cv = caca_create_canvas(0, 0);
   if (!cv)
   {
     fprintf(stderr, "%s: unable to initialise libcaca\n", argv[0]);
     return 1;
   }
+
+  dp = caca_create_display_with_driver(cv, arg_opts->driver_options[arg_opts->driver_choice - 1]);
+//    dp = caca_create_display(cv);
+
+  if (dp == NULL )
+  {
+    printf("Failed to create display\n");
+    return 1;
+  }
+
+  int usec = 40000; // The refresh delay in microseconds.
+  caca_set_display_time(dp, usec);
+  caca_set_mouse(dp, 0); // Disable cursor by default
 
   Window * win; // To store rows and columns of the terminal and other dimensional information
   win = (Window *)malloc(sizeof(Window));
@@ -51,14 +73,6 @@ int main(int argc, char **argv)
   int rc;
   pthread_t threads[NUM_THREADS];
 
-  options *arg_opts;
-  arg_opts = (options *)malloc(sizeof(options));
-
-  if (get_options(argc, argv, arg_opts) == -1)
-  {
-    fprintf(stderr, "%s: unable to get option arguments\n", argv[0]);
-    return 1;
-  }
 
   // ---------------------------------------------------
   set_window(STDIN_FILENO, lines_of_video, win, cv); // Create a window object in order to obtain dimensions
@@ -74,14 +88,6 @@ int main(int argc, char **argv)
   set_video(vid_params, dev_name, win, img_width, img_height); //FIXME: arbitrary canvas height for video
   g_video_out.vid_params = vid_params;
   turn_video_stream_off(vid_params); // We don't want video streaming initially
-  // Start the video thread
-  rc = pthread_create(&threads[t], NULL, send_video_thread, (void *)&g_video_out);
-  if (rc)
-  {
-    ERROR_EXIT("pthread: video out thread failure", 1)
-  }
-  else
-    t++;
 
   // ----------------------------------------------------------------------
   // -------   Socket related:  -------------------------------------------
@@ -134,18 +140,6 @@ int main(int argc, char **argv)
   //Signal(SIGCHLD, on_sigchld); // TODO: Since we don't have children, handle your own signals with house keeping
   // ----------------------------------------------------------------------
 
-  dp = caca_create_display_with_driver(cv, arg_opts->driver_options[arg_opts->driver_choice - 1]);
-//    dp = caca_create_display(cv);
-
-  if (dp == NULL )
-  {
-    printf("Failed to create display\n");
-    return 1;
-  }
-
-  int usec = 40000; // The refresh delay in microseconds.
-  caca_set_display_time(dp, usec);
-  caca_set_mouse(dp, 0); // Disable cursor by default
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
   caca_clear_canvas(cv);
 
@@ -157,6 +151,15 @@ int main(int argc, char **argv)
   display_menu(cv, arg_opts);
 
   caca_refresh_display(dp);
+
+  // Start the video thread
+  rc = pthread_create(&threads[t], NULL, send_video_thread, (void *)&g_video_out);
+  if (rc)
+  {
+    ERROR_EXIT("pthread: video out thread failure", 1)
+  }
+  else
+    t++;
 
   // Go (main loop)
   while (!quit)
@@ -246,6 +249,9 @@ int main(int argc, char **argv)
                 }
               }
             }
+            caca_clear_canvas(cv);
+            display_menu(cv, arg_opts);
+            caca_refresh_display(dp);
             break;
           case 'v':
           case 'V':
@@ -302,6 +308,9 @@ int main(int argc, char **argv)
 
         g_video_out.socketfd = sock_vid_fd; // Assign socket for video transmission
         is_connected = 1; // To indicate not longer trying to connect
+        caca_clear_canvas(cv);
+        display_menu(cv, arg_opts);
+        caca_refresh_display(dp);
 
       }
     }
@@ -326,7 +335,14 @@ int main(int argc, char **argv)
       caca_refresh_display(dp);
       demo = NULL;
     }
+
+    caca_clear_canvas(cv);
+    display_menu(cv, arg_opts);
+    caca_refresh_display(dp);
+
   }
+
+  caca_set_cursor(dp, 1); // Enable the  cursor
 
   // Close sockets:
   close(sock_chat_fd);
@@ -491,7 +507,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     entries_recv[i].changed = 1;
   }
 
-  maxfd = MAXFD(fileno(stdin), vid_fd) + 1;
+//  maxfd = MAXFD(fileno(stdin), vid_fd) + 1;
+  maxfd = MAXFD(fileno(stdin), 10) + 1;
 
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY); // Reset background color
 
@@ -861,7 +878,8 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
       // If we got passed these tests and settings, then the video device is on and readily streaming
       vid_params->is_ok = 1;
       // Last, turn the stream on
-      // DON'T: turn_video_stream_on(vid_params);
+       //DON'T:
+       turn_video_stream_on(vid_params);
     }
   }
   else
@@ -1374,7 +1392,7 @@ void * send_video_thread(void * arguments)
 
   while (!g_video_out.quit)
   {
-    while ((g_video_out.socketfd != -1) && (g_video_out.vid_params->is_on == 1) && (g_video_out.vid_params->is_ok == 1))
+    if ((g_video_out.socketfd != -1) && (g_video_out.vid_params->is_on == 1) && (g_video_out.vid_params->is_ok == 1))
     {
       do
       {
