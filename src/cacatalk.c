@@ -105,9 +105,6 @@ int main(int argc, char **argv)
   socklen_t clilen = sizeof(client_addr_chat);
   char address_buffer_v4[INET_ADDRSTRLEN] = "";
 
-  // Solution to obtain interface address(es):
-  print_IP_addresses();
-
   if ((listen_chat_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
   {
     ERROR_EXIT(" chat: server socket call failed", 1)
@@ -171,11 +168,12 @@ int main(int argc, char **argv)
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
   caca_clear_canvas(cv);
 
-  // Main menu //TODO:
-  // v: allow turning video on,off
-  // a: set address (or name) of peer for connecting to
-  // c: enter chat room
-//  display_menu();
+  // Main menu:
+  // c: Initiates socket connection to peer address
+  // a: set IP address (or DNS name) of peer to connect to
+  // d | Enter: enter chat room (for demo)
+  // q | Esc: to quit
+  display_menu(cv, arg_opts);
 
   caca_refresh_display(dp);
 
@@ -205,25 +203,15 @@ int main(int argc, char **argv)
             quit = 1;
             g_video_out.quit = quit; // Tell the thread to quit now
             break;
-          case 'v':
-          case 'V':
-            key_choice = 'v';
-            // Toggle the state of video streaming
-            if((g_video_out.vid_params->is_on != 1) && (g_video_out.vid_params->is_ok == 1))
-              turn_video_stream_on(vid_params);
-            else
-              turn_video_stream_off(vid_params);
-
-            demo = chat; // whit/without video
+          case CACA_KEY_RETURN:
+          case 'd':
+          case 'D':
+            key_choice = 'd';
+            demo = chat;
             break;
           case 'c':
           case 'C':
             key_choice = 'c';
-            demo = chat;
-            break;
-          case 'i':
-          case 'I':
-            key_choice = 'i';
             if (sock_chat_fd < 0) // Only attempt a connection when server mode hasn't accepted one already
             {
               // Initialize connection
@@ -332,16 +320,14 @@ int main(int argc, char **argv)
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
       caca_clear_canvas(cv);
 
-      if (key_choice == 'v')
-        demo(cv, dp, sock_chat_fd, sock_vid_fd, &win, label_name_of_peer);
-
-      if (key_choice == 'c')
+      if (key_choice == 'd')
         demo(cv, dp, sock_chat_fd, sock_vid_fd, &win, label_name_of_peer);
 
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
 
       caca_clear_canvas(cv);
       caca_set_cursor(dp, 0); // Disable cursor
+      display_menu(cv, arg_opts);
       caca_refresh_display(dp);
       demo = NULL;
     }
@@ -364,8 +350,52 @@ int main(int argc, char **argv)
 
 }
 
+
+void display_menu(caca_canvas_t *cv, options * arg_opts)
+{
+    int xo = caca_get_canvas_width(cv) - 2;
+    int yo = caca_get_canvas_height(cv) - 2;
+
+    caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+    caca_clear_canvas(cv);
+    caca_draw_thin_box(cv, 1, 1, xo, yo);
+
+    caca_put_str(cv, (xo - strlen("cacatalk demo")) / 2, 3, "cacatalk demo");
+    caca_put_str(cv, (xo - strlen("==================")) / 2, 4, "==================");
+    caca_put_str(cv, (xo - strlen(arg_opts->host_IPv4)) / 2, 6, arg_opts->host_IPv4);
+
+    // a: set IP address (or DNS name) of peer to connect to
+    // c: Connect to peer address
+    // d | Enter: enter chat room (for demo)
+    // q | Esc: to quit
+    caca_put_str(cv, 4, 8, "Options:");
+    char addr_label[MAXPATHLEN] = "";
+    sprintf(addr_label, "'a'        : Set IP Address (or DNS name) of peer [%s]", arg_opts->peer_name);
+    caca_put_str(cv, 4, 10, addr_label);
+    caca_put_str(cv, 4, 11, "'b'        : blank");
+    caca_put_str(cv, 4, 12, "'c'        : Connect to peer address");
+
+    caca_put_str(cv, 4, yo - 2, "'q': quit");
+
+}
+
+/* TODO:
+int set_peer_address(caca_canvas_t *cv, caca_display_t *dp, char * peer_hostname)
+{
+  caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+  caca_clear_canvas(cv);
+  caca_draw_thin_box(cv, 1, 1, xo, yo);
+
+  char *video_in_buffer = NULL;
+  video_in_buffer = malloc(video_area);
+  unsigned int new_recv_video_bytes = 0; // Indicates when the size of a new video frame
+}
+*/
+
 int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window *win, char * peer_hostname)
 {
+  int xo = caca_get_canvas_width(cv) - 2;
+  int yo = caca_get_canvas_height(cv) - 2;
   int video_area = 16 * win->video_cols * win->video_lines; // A safe value for the receiving video buffer
 
   char *video_in_buffer = NULL;
@@ -375,10 +405,10 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
   fd_set readset, writeset;
   int maxfd;
   char label_recv[MAXHOSTNAMELEN];
-  int text_buffer_size = (MIN(win->cols, BUFFER_SIZE)) - 2; // Leave padding (margin)
   unsigned int row_offset_recv = 1 + win->video_lines;
   unsigned int row_offset_self = row_offset_recv + TEXT_ENTRIES + 1;
-  unsigned int col_offset = 1;
+  unsigned int col_offset = 2;
+  int text_buffer_size = (MIN(caca_get_canvas_width(cv), BUFFER_SIZE)) - 2*col_offset; // Leave padding (margin)
   char peer_username[20]= ""; // TODO obtain the info
   caca_set_cursor(dp, 1); // Enable cursor
 
@@ -401,7 +431,14 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
   }
 
   // Labels
-  char sender_label[MAX_INPUT] = "Text chat (self) - press: Enter to send || Escape to stop\0";
+  char sender_label[MAX_INPUT] = "";
+  char sender_label1[MAX_INPUT] = "";
+  char sender_label2[MAX_INPUT] = " Press: Ctr+V to toggle video || Escape to exit\0";
+  if(g_video_out.vid_params->is_on == 1)
+     sprintf(sender_label1, "[Video ON]");
+  else
+     sprintf(sender_label1, "[Video OFF]");
+  sprintf(sender_label, "%s %s", sender_label1, sender_label2);
   sprintf(label_recv, "%s %s", peer_hostname, peer_username);
 
   textentry entries_self[TEXT_ENTRIES];
@@ -416,7 +453,10 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
   unsigned int new_recv_entry_bytes = 0; // Indicates when the size of a new peer line entry
   unsigned int first_time = 1; // Indicates when we are here for the first time
 
+  caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
   caca_clear_canvas(cv);
+  caca_draw_thin_box(cv, 1, 1, xo, yo);
+
   caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
   caca_fill_box(cv, col_offset, row_offset_recv, text_buffer_size, 1, ' ');
   caca_put_str(cv, col_offset, row_offset_recv, label_recv);
@@ -446,9 +486,24 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
 
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY); // Reset background color
 
+  // FIXME: as a hack, I'm redirecting stderr to /dev/null to get rid of annoying v4l2 error messages
+  if(close(fileno(stderr)) == 0)
+      open("/dev/null", O_RDWR);
+
   while (running)
   {
+    if(g_video_out.vid_params->is_on == 1)
+       sprintf(sender_label1, "[Video ON]");
+    else
+       sprintf(sender_label1, "[Video OFF]");
+    sprintf(sender_label, "%s %s", sender_label1, sender_label2);
+    caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
+    caca_fill_box(cv, col_offset, row_offset_self-1, text_buffer_size, 1, ' ');
+    caca_put_str(cv, col_offset, row_offset_self-1, sender_label);
+
     caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY); // Reset background color
+    // Always reset the cursor on the active textentry
+    caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
 
     if (text_fd > 0)
     {
@@ -459,7 +514,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
       FD_ZERO(&writeset);
       FD_SET(vid_fd, &readset);
       FD_SET(text_fd, &readset);
-      FD_SET(text_fd, &writeset); // FIXME??? should I use 2 sockets?
+      FD_SET(text_fd, &writeset);
 
       if ( select( maxfd, &readset, &writeset, NULL, pto ) > 0 )
       {
@@ -501,7 +556,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     // Update peer (received) video
     if (new_recv_video_bytes > 0)
     {
-      ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
+//      ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
+      ssize_t imported_bytes = caca_import_area_from_memory(cv, caca_get_canvas_width(cv)/2-win->cols/2, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
       caca_fill_box(cv, col_offset, win->video_lines, text_buffer_size, 1, ' ');
       char import_label[100] = "";
       sprintf(import_label, "Received= %d bytes, Imported %d bytes of caca video (%d x %d)", new_recv_video_bytes,
@@ -551,6 +607,9 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     }
     new_recv_entry_bytes = 0; // always reset (because we must have handled the entry already)
 
+    // Always reset the cursor on the active textentry (to hide the v4l2 errors)
+    caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
+
     // Update self (sender) entries
     if (newline_entered == 1)
     {
@@ -582,9 +641,9 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
       entries_self[i].size = 0;
       entries_self[i].cursor = 0;
     }
-    else // Only update last line if changed
+    else // Always update last line (even if not changed...to hide error messages from v4l2) //FIXME
     {
-      if (entries_self[e].changed == 1)
+      //if (entries_self[e].changed == 1)
       {
         caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
         caca_fill_box(cv, col_offset, e + row_offset_self, text_buffer_size, 1, ' ');
@@ -601,9 +660,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     entries_self[e].changed = 0;
     newline_entered = 0;
 
-    // Put the cursor on the active textentry
+    // Always reset the cursor on the active textentry (to hide the v4l2 errors)
     caca_gotoxy(cv, col_offset + entries_self[e].cursor, e + row_offset_self);
-
     caca_refresh_display(dp);
 
     caca_event_t ev;
@@ -640,6 +698,13 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
         }
         break;
       }
+      case CACA_KEY_CTRL_V:
+        // Toggle the state of video streaming
+        if((g_video_out.vid_params->is_on != 1) && (g_video_out.vid_params->is_ok == 1))
+          turn_video_stream_on(g_video_out.vid_params);
+        else
+          turn_video_stream_off(g_video_out.vid_params);
+        break;
       case CACA_KEY_HOME:
         entries_self[e].cursor = 0;
         break;
@@ -967,7 +1032,6 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
 
   // If we got passed these tests and settings, then the video device is on and readily streaming
   vid_params->is_ok = 1;
-
   // Last, turn the stream on
   turn_video_stream_on(vid_params);
 
@@ -1031,7 +1095,10 @@ int xioctl(int fd, int request, void *arg)
 
   if (r == -1)
   {
-    fprintf(stderr, "error %d, %s\n", errno, strerror(errno));
+    // FIXME: let's be silent on errors for now
+    // I was getting the following one while trying to turn the stream on/off
+    // libv4l2 error dequeuing buf invalid argument
+    //fprintf(stderr, "error %d, %s\n", errno, strerror(errno));
   }
   return r;
 }
@@ -1219,6 +1286,7 @@ int get_options(int argc, char **argv, options * opt)
   strcpy(opt->video_device_name, "/dev/video0\0");
   memset(opt->peer_name, '\0', MAXHOSTNAMELEN);
   opt->is_server = 0; // Socket client is the default behavior
+  get_IP_addresses(opt->host_IPv4, 0);
 
   while ((c = getopt(argc, argv, "sv:p:")) != -1) // The ":" next to a flag indicates to expect a value
   {

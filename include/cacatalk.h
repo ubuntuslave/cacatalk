@@ -50,6 +50,7 @@ typedef struct options_s
 {
   char video_device_name[BUFFER_SIZE]; ///< The video device name
   char peer_name[MAXHOSTNAMELEN]; ///< The IP address or hostname of the peer to connect to
+  char host_IPv4[MAXHOSTNAMELEN]; ///< The IP address for the local host
   int is_server; ///< To indicate socket behavior (either as server=1, or client=0 (default))
 } options;
 
@@ -78,6 +79,7 @@ typedef struct video_params_s {
 } video_params;
 
 /** @brief structure of arguments passed to a thread (also is going to be made global to be able to shut the video on and off)
+ *
  * TODO:
  *
  */
@@ -87,6 +89,13 @@ typedef struct video_out_args_s {
     Window *win;         ///< Pointer to window object structure
     video_params *vid_params; ///< Pointer to host's video device parameters structure
 } video_out_args;
+
+/** @brief It draws the main menu indicating posible options tied to keyboard commands
+ *
+ * @param cv  A pointer to the caca canvas
+ * @param arg_opts  The current argument options structure
+ */
+void display_menu(caca_canvas_t *cv, options * arg_opts);
 
 /** @brief TODO
  *

@@ -68,7 +68,7 @@
 
 #include "caca_socket.h"
 
-void print_IP_addresses()
+void get_IP_addresses(char *presentation_addr, int print)
 {
   // This only produces the localhost address
   //printf("IP Address : %s\n", inet_ntoa(*((struct in_addr *) client_as_host->h_addr_list[0])));
@@ -85,7 +85,10 @@ void print_IP_addresses()
       char address_buffer_v4[INET_ADDRSTRLEN];
       // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
       inet_ntop(AF_INET, tmp_addr_ptr, address_buffer_v4, INET_ADDRSTRLEN);
-      printf("%s IPv4 Address = %s\n", if_addr_ptr->ifa_name, address_buffer_v4);
+      if(print == 1)
+        printf("%s IPv4 Address = %s\n", if_addr_ptr->ifa_name, address_buffer_v4);
+      if(strlen(address_buffer_v4) > 4)
+        strcpy(presentation_addr, address_buffer_v4);
     }
     else if (if_addr_ptr->ifa_addr->sa_family == AF_INET6) // check it is IP6
     { // is a valid IP6 Address
@@ -93,14 +96,14 @@ void print_IP_addresses()
       char address_buffer_v6[INET6_ADDRSTRLEN];
       // Convert IP address from network (binary) to textual form (Presentation (eg. dotted decimal))
       inet_ntop(AF_INET6, tmp_addr_ptr, address_buffer_v6, INET6_ADDRSTRLEN);
-      printf("%s IPv6 Address = %s\n", if_addr_ptr->ifa_name, address_buffer_v6);
+      if(print == 1)
+        printf("%s IPv6 Address = %s\n", if_addr_ptr->ifa_name, address_buffer_v6);
     }
   }
   // Free memory
   if (if_addr_struct != NULL )
     freeifaddrs(if_addr_struct);
 
-  char dummychar = getc(stdin); // TODO: Pause for debugging socket
 }
 
 /** TODO: description
@@ -197,117 +200,6 @@ int inet_connect(const char *host, const char *service, int type)
     freeaddrinfo(result);
 
     return (rp == NULL) ? -1 : sfd;
-}
-
-/** TODO: description
- *
- * @return number of bytes sent through socket
- */
-int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline, int send_bytes)
-{
-  /*
-  // Clear receive buffer
-  memset(recvline, '\0', MAXLINE);
-
-  int maxfd, n;
-  fd_set readset;
-  fd_set writeset;
-//  int stdin_eof = 0;
-  struct timeval tv;
-
-  // do socket initialization etc.
-
-  tv.tv_sec = 1;
-  tv.tv_usec = 500000;
-
-  // tv now represents 1.5 seconds
-
-  maxfd = MAXFD(fileno(stdin), sockfd) + 1;
-
-  FD_ZERO(&readset);
-  FD_ZERO(&writeset);
-
-  if (stdin_eof == 0)
-    FD_SET(fileno(stdin), &readset);
-
-  FD_SET(sockfd, &readset);
-  FD_SET(sockfd, &writeset);
-
-  */
-
-  int send_status = send(sockfd, sendline, send_bytes, 0); // TODO: use this instead to write data
-
-//  if (select(maxfd, &readset, NULL, NULL, NULL ) == 0)
-//  if (select(maxfd, &readset, NULL, NULL, &tv ) == 0)
-//  if (select(maxfd, &readset, &writeset, NULL, 0 ) == 0)
-//  if (select(maxfd, NULL, &writeset, NULL, NULL ) == 0)
-  {
-    // Receive data
-    /*
-    if (FD_ISSET(sockfd, &readset))
-    {
-      if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
-      {
-        recvline[n] = '\0';
-      }
-    }
-    */
-
-    // Send data
-    /*
-    if ( FD_ISSET(fileno(stdin), &readset))
-//    if ( FD_ISSET(sockfd, &readset))
-    {
-          int send_status = send(sockfd, sendline, strlen(sendline), 0); // TODO: use this instead to write data
-          printf("sent %d bytes\n", send_status);
-    }
-    */
-/*
-    //      if (FD_ISSET(sockfd, &writeset))
-      {
-        if (sendline != NULL)
-        {
-          //        write(sockfd, sendline, strlen(sendline));
-          int send_status = send(sockfd, sendline, strlen(sendline), 0); // TODO: use this instead to write data
-          if(send_status >= 0)
-          {
-            return send_status;
-          }
-          else // -1
-          {
-            //          stdin_eof = 1;
-            shutdown(sockfd, SHUT_WR);
-            FD_CLR(sockfd, &writeset);
-            return send_status;
-          }
-        }
-      }
-      */
-  }
-//  else
-//    return -1; // -1 implies failure
-
-  return send_status; // 0 Implies success
-}
-
-
-void str_receive(int sockfd)
-{
-  ssize_t n;
-  char recvline[MAXLINE];
-
-  for (;;) // FIXME: don't put a loop like this
-  {
-//    if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
-    if ((n = recv(sockfd, recvline, MAXLINE - 1, 0)) == 0)
-      return; /* connection closed by other end */
-
-    recvline[n] = '\0';
-    fwrite(recvline, n, 1, stdout);
-    //fputs(recvline, stdout);
-
-    //write(sockfd, recvline, n); // TODO:send back stuff
-  }
 }
 
 

@@ -53,8 +53,14 @@ int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * serve
  */
 int inet_connect(const char *host, const char *service, int type);
 
-int send_receive_data_through_socket(int sockfd, char* sendline, char * recvline, int send_bytes);
-void print_IP_addresses();
+/** @brief Resolves all the network interfaces and prints addresses to standard output (if desired)
+ *         In fact, it provides the IPv4 presentation address for the local host.
+ *
+ * @param presentation_addr The presentation address in IPv4 format (dotted decimal)
+ * @param print         1: prints all addresses to standard output. Or not (0: default)
+ */
+void get_IP_addresses(char *presentation_addr, int print);
+
 // The following typedef simplifies the function definition after it
 typedef void Sigfunc(int); // for signal handlers
 
@@ -63,6 +69,5 @@ Sigfunc* Signal(int signo, Sigfunc *func);
 
 // Signal handlers
 void on_sigchld(int signo);
-void str_receive(int sockfd);
 
 #endif // CACA_SOCKET_H_
