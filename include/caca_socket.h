@@ -33,7 +33,7 @@
 #define SIZE           sizeof(struct sockaddr_in)
 #define DEFAULT_HOST   "eniac.geo.hunter.cuny.edu"
 #define PORT_CHAT           25666
-#define PORT_VIDEO          25777
+#define PORT_VIDEO          25667
 #define  ERROR_EXIT( _mssg, _num)  perror(_mssg);exit(_num);
 #define  MAXLINE       4096
 #define LISTEN_QUEUE_SIZE   5

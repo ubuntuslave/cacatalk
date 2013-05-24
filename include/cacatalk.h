@@ -16,10 +16,12 @@
 #include <sys/param.h>
 #include <linux/videodev2.h>
 #include <libv4l2.h>
+#include <pthread.h>
 #include "caca.h"
 
 #define BUFFER_SIZE MAX_INPUT
 #define TEXT_ENTRIES 5
+#define NUM_THREADS  1 // just one for now
 
 typedef struct textentry
 {
@@ -51,17 +53,6 @@ typedef struct options_s
   int is_server; ///< To indicate socket behavior (either as server=1, or client=0 (default))
 } options;
 
-// TODO: delete
-struct thread_arg_struct {
-    int socketfd;
-    int text_buffer_size;
-    unsigned int row_offset;
-    unsigned int col_offset;
-    char label[MAX_INPUT]; ///< title string
-    caca_canvas_t *cv;  ///< caca canvas
-    caca_display_t *dp; ///< caca display
-};
-
 typedef struct video_params_s {
   int is_ok; ///< 1: Indicates when the video device is setup correctly. 0: is not okay
   int is_on; ///< 1: Indicates when the video device is streaming. 0: the video is not streaming. -1: status is undefined
@@ -86,6 +77,17 @@ typedef struct video_params_s {
   unsigned int cv_cols; ///< Number of columns to resolve video on caca _anvas
 } video_params;
 
+/** @brief structure of arguments passed to a thread (also is going to be made global to be able to shut the video on and off)
+ * TODO:
+ *
+ */
+typedef struct video_out_args_s {
+    int socketfd;        ///< The socket file descriptor for streaming video
+    int video_stream_on; ///< Set to 1 to indicate streaming is on. 0 for off
+    int quit;            ///< Set to 1 to indicate to quite
+    Window *win;         ///< Pointer to window object structure
+    video_params *vid_params; ///< Pointer to host's video device parameters structure
+} video_out_args;
 
 /** @brief TODO
  *

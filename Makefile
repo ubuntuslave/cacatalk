@@ -15,7 +15,7 @@ CFLAGS     =   -Wall -g
 INCLUDEFLAGS = -I../include -I./include
 ENVVARS    = # -DSHOWHOST -DDEVELOP 
 ALLFLAGS   = $(CFLAGS) $(INCLUDEFLAGS) # $(ENVVARS)
-LDFLAGS    = -lv4l2 -lcaca -lncurses -lrt #-lpthread # "librt" stands for "real time library" used for the AIO
+LDFLAGS    = -lv4l2 -lcaca -lncurses -lpthread # -lrt # "librt" stands for "real time library" used for the AIO
 
 all: $(OBJS) $(EXECS)
 

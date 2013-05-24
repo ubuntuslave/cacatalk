@@ -105,11 +105,11 @@ void print_IP_addresses()
 
 /** TODO: description
  *
- * @return socket file descriptor
+ * @return socket file descriptor number. Or -1 if not connected.
  */
 int connect_to_peer_socket(const char* peer_hostname, struct sockaddr_in * server, in_port_t port)
 {
-  int sockfd;
+  int sockfd = -1; // Initial invalid file descriptor number
   char ip_name[256] = "";
   char my_host_name[MAXHOSTNAMELEN] = "";
 //  struct sockaddr_in server;
