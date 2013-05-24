@@ -78,13 +78,13 @@ int main(int argc, char **argv)
   video_params *vid_params;
   vid_params = (video_params *)malloc(sizeof(video_params));
   dev_name = arg_opts->video_device_name;
-  g_video_out.video_stream_on = 0; // We don't want video streaming initially
   g_video_out.socketfd = -1; // We don't have a socket connected for video transmission yet
   g_video_out.quit = quit; // Don't quit just yet
   g_video_out.win = &win; // Set to window's pointer struct
   // TODO: don't always set video (in case it doesn't exist)
   set_video(vid_params, dev_name, &win, img_width, img_height); //FIXME: arbitrary canvas height for video
   g_video_out.vid_params = vid_params;
+  turn_video_stream_off(vid_params); // We don't want video streaming initially
   // Start the video thread
   rc = pthread_create(&threads[t], NULL, send_video_thread, (void *) &g_video_out);
   if (rc)
@@ -148,7 +148,6 @@ int main(int argc, char **argv)
   Signal(SIGCHLD, on_sigchld); // TODO: Since we don't have children, handle your own signals with house keeping
   // ----------------------------------------------------------------------
 
-//  cv = caca_create_canvas(80, 24);
   cv = caca_create_canvas(0, 0);
   if (!cv)
   {
@@ -210,10 +209,10 @@ int main(int argc, char **argv)
           case 'V':
             key_choice = 'v';
             // Toggle the state of video streaming
-            if(g_video_out.video_stream_on == 0)
-              g_video_out.video_stream_on = 1;
+            if((g_video_out.vid_params->is_on != 1) && (g_video_out.vid_params->is_ok == 1))
+              turn_video_stream_on(vid_params);
             else
-              g_video_out.video_stream_on = 0;
+              turn_video_stream_off(vid_params);
 
             demo = chat; // whit/without video
             break;
@@ -334,7 +333,7 @@ int main(int argc, char **argv)
       caca_clear_canvas(cv);
 
       if (key_choice == 'v')
-        demo(cv, dp, vid_params, &win, sock_vid_fd);
+        demo(cv, dp, sock_chat_fd, sock_vid_fd, &win, label_name_of_peer);
 
       if (key_choice == 'c')
         demo(cv, dp, sock_chat_fd, sock_vid_fd, &win, label_name_of_peer);
@@ -372,7 +371,6 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
   char *video_in_buffer = NULL;
   video_in_buffer = malloc(video_area);
   unsigned int new_recv_video_bytes = 0; // Indicates when the size of a new video frame
-  int area_of_interest = win->cols * win->video_lines;
 
   fd_set readset, writeset;
   int maxfd;
@@ -506,8 +504,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
       ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes, win->caca_format); // TODO: pass format from window (or struct)
       caca_fill_box(cv, col_offset, win->video_lines, text_buffer_size, 1, ' ');
       char import_label[100] = "";
-      sprintf(import_label, "Received= %d bytes, Imported %d bytes of caca video (AOI:%d x %d)", new_recv_video_bytes,
-              imported_bytes, win->cols, win->video_lines);
+      sprintf(import_label, "Received= %d bytes, Imported %d bytes of caca video (%d x %d)", new_recv_video_bytes,
+              imported_bytes, win->video_cols, win->video_lines);
       caca_put_str(cv, col_offset, win->video_lines, import_label);
     }
     new_recv_video_bytes = 0; // always reset (because we must have handled the buffer already)
@@ -884,7 +882,7 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
 
   // We don't know yet if setting the video device will succeed, so set the "not okay" flag initially
   vid_params->is_ok = 0;
-  vid_params->is_on = 0; // Streaming is not on yet
+  vid_params->is_on = 0; // Streaming is not "on" yet
 
   // ------ Arbitrary settings:
   vid_params->caca_format = win->caca_format;
@@ -1099,7 +1097,7 @@ void * send_video_thread(void * arguments)
 
   while(!g_video_out.quit)
   {
-    while((g_video_out.socketfd != -1) && (g_video_out.video_stream_on == 1) )
+    while((g_video_out.socketfd != -1) && (g_video_out.vid_params->is_on == 1) &&  (g_video_out.vid_params->is_ok == 1) )
     {
       do
       {
@@ -1141,7 +1139,8 @@ void * send_video_thread(void * arguments)
         fprintf(stderr, "grab: Can't dither image with algorithm '%s'\n", g_video_out.vid_params->caca_dither);
         unload_image(im);
         caca_free_canvas(cv);
-        return -1;
+        //return -1;      // TODO: don't quit, but handle error gracefully
+        continue;
       }
 
       if (g_video_out.vid_params->caca_brightness != -1)

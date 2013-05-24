@@ -83,7 +83,6 @@ typedef struct video_params_s {
  */
 typedef struct video_out_args_s {
     int socketfd;        ///< The socket file descriptor for streaming video
-    int video_stream_on; ///< Set to 1 to indicate streaming is on. 0 for off
     int quit;            ///< Set to 1 to indicate to quite
     Window *win;         ///< Pointer to window object structure
     video_params *vid_params; ///< Pointer to host's video device parameters structure
