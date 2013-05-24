@@ -39,23 +39,31 @@
 void * send_video_thread(void * arguments);
 // ----------------------------
 int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window *win, char * peer_hostname);
-void set_window(int fd, unsigned short video_lines, Window *win);
 
 // GLOBALS:
 video_out_args g_video_out;
 
 int main(int argc, char **argv)
 {
-  Window win; // To store rows and columns of the terminal
   void (*demo)(void * arg1, ...) = NULL;
-  int quit = 0;
+
   caca_canvas_t *cv;
   caca_display_t *dp;
+  cv = caca_create_canvas(0, 0);
+  if (!cv)
+  {
+    fprintf(stderr, "%s: unable to initialise libcaca\n", argv[0]);
+    return 1;
+  }
+
+  Window * win; // To store rows and columns of the terminal and other dimensional information
+  win = (Window *)malloc(sizeof(Window));
   int img_width = 640; // TODO: parametrize
   int img_height = 480;
   unsigned int lines_of_video = 16; // Arbitrary number of lines // TODO: parametrize
   char * dev_name;
   char label_name_of_peer[MAXHOSTNAMELEN] = "";
+  int quit = 0; // Indicates main loop to quit
   int is_connected = 0;
   long t = 0;
   int rc;
@@ -71,7 +79,7 @@ int main(int argc, char **argv)
   }
 
   // ---------------------------------------------------
-  set_window(STDIN_FILENO, lines_of_video, &win); // Create a window object in order to obtain dimensions
+  set_window(STDIN_FILENO, lines_of_video, win, cv); // Create a window object in order to obtain dimensions
 
   // --------------- Video related ---------------------------------
   video_params *vid_params;
@@ -79,13 +87,13 @@ int main(int argc, char **argv)
   dev_name = arg_opts->video_device_name;
   g_video_out.socketfd = -1; // We don't have a socket connected for video transmission yet
   g_video_out.quit = quit; // Don't quit just yet
-  g_video_out.win = &win; // Set to window's pointer struct
+  g_video_out.win = win; // Set to window's pointer struct
   // TODO: don't always set video (in case it doesn't exist)
-  set_video(vid_params, dev_name, &win, img_width, img_height); //FIXME: arbitrary canvas height for video
+  set_video(vid_params, dev_name, win, img_width, img_height); //FIXME: arbitrary canvas height for video
   g_video_out.vid_params = vid_params;
   turn_video_stream_off(vid_params); // We don't want video streaming initially
   // Start the video thread
-  rc = pthread_create(&threads[t], NULL, send_video_thread, (void *) &g_video_out);
+  rc = pthread_create(&threads[t], NULL, send_video_thread, (void *)&g_video_out);
   if (rc)
   {
     ERROR_EXIT("pthread: video out thread failure", 1)
@@ -144,15 +152,7 @@ int main(int argc, char **argv)
   Signal(SIGCHLD, on_sigchld); // TODO: Since we don't have children, handle your own signals with house keeping
   // ----------------------------------------------------------------------
 
-  cv = caca_create_canvas(0, 0);
-  if (!cv)
-  {
-    fprintf(stderr, "%s: unable to initialise libcaca\n", argv[0]);
-    return 1;
-  }
-
-  const char * driver = "ncurses";
-  dp = caca_create_display_with_driver(cv, driver);
+  dp = caca_create_display_with_driver(cv, arg_opts->driver_options[arg_opts->driver_choice - 1]);
 //    dp = caca_create_display(cv);
 
   if (dp == NULL )
@@ -202,6 +202,11 @@ int main(int argc, char **argv)
             quit = 1;
             g_video_out.quit = quit; // Tell the thread to quit now
             break;
+          case 'a':
+          case 'A':
+            key_choice = 'a';
+            demo = set_peer_address;
+            break;
           case CACA_KEY_RETURN:
           case 'd':
           case 'D':
@@ -228,24 +233,24 @@ int main(int argc, char **argv)
                 {
 
                   // We will only listen on the chat socket (the video socket will get connected immediately after accepting a connnection)
-                    if (-1 == listen(listen_video_fd, LISTEN_QUEUE_SIZE))
-                    {
-                      ERROR_EXIT(" video: listen (as client) call failed", 1)
-                    }
+                  if (-1 == listen(listen_video_fd, LISTEN_QUEUE_SIZE))
+                  {
+                    ERROR_EXIT(" video: listen (as client) call failed", 1)
+                  }
 
-                    if((sock_vid_fd = accept(listen_video_fd, SOCKADDR &client_addr_video, &clilen)) < 0)
-                    {
-                      if (EINTR == errno)
-                        continue; // back to loop
-                      // If blocking:
-                      else
-                        ERROR_EXIT(" video: accept error (as client)", 1);
-                    }
+                  if ((sock_vid_fd = accept(listen_video_fd, SOCKADDR &client_addr_video, &clilen)) < 0)
+                  {
+                    if (EINTR == errno)
+                      continue; // back to loop
+                    // If blocking:
                     else
-                    {
-                      g_video_out.socketfd = sock_vid_fd; // Assign socket for video transmission
-                      is_connected = 1; // To indicate not longer trying to connect
-                    }
+                      ERROR_EXIT(" video: accept error (as client)", 1);
+                  }
+                  else
+                  {
+                    g_video_out.socketfd = sock_vid_fd; // Assign socket for video transmission
+                    is_connected = 1; // To indicate not longer trying to connect
+                  }
 
                   void * peer_addr_ptr = NULL;
                   if (client_addr_video.sin_family == AF_INET) // check it is IP4
@@ -259,6 +264,11 @@ int main(int argc, char **argv)
                 }
               }
             }
+            break;
+          case 'v':
+          case 'V':
+            key_choice = 'v';
+            demo = change_video_device;
             break;
         }
       }
@@ -303,7 +313,7 @@ int main(int argc, char **argv)
 
         client_addr_chat.sin_port = PORT_VIDEO; // Just modify the port number for video streaming (FIXME: may be wrong)
 
-        while((sock_vid_fd = connect_to_peer_socket(address_buffer_v4, &server_addr_video, PORT_VIDEO)) == -1) // Keep trying
+        while ((sock_vid_fd = connect_to_peer_socket(address_buffer_v4, &server_addr_video, PORT_VIDEO)) == -1) // Keep trying
         {
           continue; // back to loop
         }
@@ -319,8 +329,12 @@ int main(int argc, char **argv)
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
       caca_clear_canvas(cv);
 
+      if (key_choice == 'a')
+        demo(cv, dp, arg_opts);
       if (key_choice == 'd')
-        demo(cv, dp, sock_chat_fd, sock_vid_fd, &win, label_name_of_peer);
+        demo(cv, dp, sock_chat_fd, sock_vid_fd, win, label_name_of_peer);
+      if (key_choice == 'v')
+        demo(cv, dp, arg_opts, vid_params, win, img_width, img_height);
 
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
 
@@ -344,53 +358,65 @@ int main(int argc, char **argv)
 
   close_video_stream(vid_params);
 
-  pthread_exit(NULL); // FIXME: perhaps it should join a thread, for instance
+  pthread_exit(NULL ); // FIXME: perhaps it should join a thread, for instance
   // return pthread_join(some_thread, NULL); // Wait until thread is finished
   // return 0;
 
 }
 
-
 void display_menu(caca_canvas_t *cv, options * arg_opts)
 {
-    int xo = caca_get_canvas_width(cv) - 2;
-    int yo = caca_get_canvas_height(cv) - 2;
+  int xo = caca_get_canvas_width(cv) - 2;
+  int yo = caca_get_canvas_height(cv) - 2;
 
-    caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
-    caca_clear_canvas(cv);
-    caca_draw_thin_box(cv, 1, 1, xo, yo);
-
-    caca_put_str(cv, (xo - strlen("cacatalk demo")) / 2, 3, "cacatalk demo");
-    caca_put_str(cv, (xo - strlen("==================")) / 2, 4, "==================");
-    caca_put_str(cv, (xo - strlen(arg_opts->host_IPv4)) / 2, 6, arg_opts->host_IPv4);
-
-    // a: set IP address (or DNS name) of peer to connect to
-    // c: Connect to peer address
-    // d | Enter: enter chat room (for demo)
-    // q | Esc: to quit
-    caca_put_str(cv, 4, 8, "Options:");
-    char addr_label[MAXPATHLEN] = "";
-    sprintf(addr_label, "'a'        : Set IP Address (or DNS name) of peer [%s]", arg_opts->peer_name);
-    caca_put_str(cv, 4, 10, addr_label);
-    caca_put_str(cv, 4, 11, "'b'        : blank");
-    caca_put_str(cv, 4, 12, "'c'        : Connect to peer address");
-
-    caca_put_str(cv, 4, yo - 2, "'q': quit");
-
-}
-
-/* TODO:
-int set_peer_address(caca_canvas_t *cv, caca_display_t *dp, char * peer_hostname)
-{
   caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
   caca_clear_canvas(cv);
   caca_draw_thin_box(cv, 1, 1, xo, yo);
 
-  char *video_in_buffer = NULL;
-  video_in_buffer = malloc(video_area);
-  unsigned int new_recv_video_bytes = 0; // Indicates when the size of a new video frame
+  caca_put_str(cv, (xo - strlen("cacatalk demo")) / 2, 3, "cacatalk demo");
+  caca_put_str(cv, (xo - strlen("==================")) / 2, 4, "==================");
+  caca_put_str(cv, (xo - strlen(arg_opts->host_IPv4)) / 2, 6, arg_opts->host_IPv4);
+
+  // a: set IP address (or DNS name) of peer to connect to
+  // c: Connect to peer address
+  // d | Enter: enter chat room (for demo)
+  // q | Esc: to quit
+  caca_put_str(cv, 4, 8, "Options:");
+  char addr_label[MAXPATHLEN] = "";
+  sprintf(addr_label, "'a'        : Set IP Address (or DNS name) of peer [%s]", arg_opts->peer_name);
+  caca_put_str(cv, 4, 10, addr_label);
+  caca_put_str(cv, 4, 11, "'b'        : blank");
+
+  char conn_label[MAXPATHLEN] = "";
+  if (g_video_out.socketfd != -1)
+    sprintf(conn_label, "'c'        : Connected to %s", arg_opts->peer_name);
+  else
+    sprintf(conn_label, "'c'        : Connect to peer");
+  caca_put_str(cv, 4, 12, conn_label);
+
+  char dev_label[MAXPATHLEN] = "";
+  if (g_video_out.vid_params->is_ok == 1)
+    sprintf(dev_label, "'v'        : Video device working [%s]", arg_opts->video_device_name);
+  else
+    sprintf(dev_label, "'v'        : Set video device");
+  caca_put_str(cv, 4, 13, dev_label);
+
+  caca_put_str(cv, 4, yo - 2, "'q' | Esc  : quit");
+
 }
-*/
+
+/* TODO:
+ int set_peer_address(caca_canvas_t *cv, caca_display_t *dp, char * peer_hostname)
+ {
+ caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
+ caca_clear_canvas(cv);
+ caca_draw_thin_box(cv, 1, 1, xo, yo);
+
+ char *video_in_buffer = NULL;
+ video_in_buffer = malloc(video_area);
+ unsigned int new_recv_video_bytes = 0; // Indicates when the size of a new video frame
+ }
+ */
 
 int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window *win, char * peer_hostname)
 {
@@ -409,8 +435,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
   unsigned int row_offset_recv = 1 + win->video_lines;
   unsigned int row_offset_self = row_offset_recv + TEXT_ENTRIES + 1;
   unsigned int col_offset = 2;
-  int text_buffer_size = (MIN(caca_get_canvas_width(cv), BUFFER_SIZE)) - 2*col_offset; // Leave padding (margin)
-  char peer_username[20]= ""; // TODO obtain the info
+  int text_buffer_size = (MIN(caca_get_canvas_width(cv), BUFFER_SIZE)) - 2 * col_offset; // Leave padding (margin)
+  char peer_username[20] = ""; // TODO obtain the info
   caca_set_cursor(dp, 1); // Enable cursor
 
   struct timeval timeout;
@@ -435,10 +461,10 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
   char sender_label[MAX_INPUT] = "";
   char sender_label1[MAX_INPUT] = "";
   char sender_label2[MAX_INPUT] = " Press: Ctr+V to toggle video || Escape to exit\0";
-  if(g_video_out.vid_params->is_on == 1)
-     sprintf(sender_label1, "[Video ON]");
+  if (g_video_out.vid_params->is_on == 1)
+    sprintf(sender_label1, "[Video ON]");
   else
-     sprintf(sender_label1, "[Video OFF]");
+    sprintf(sender_label1, "[Video OFF]");
   sprintf(sender_label, "%s %s", sender_label1, sender_label2);
   sprintf(label_recv, "%s %s", peer_hostname, peer_username);
 
@@ -483,24 +509,24 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     entries_recv[i].changed = 1;
   }
 
-  maxfd = MAXFD(fileno(stdin), vid_fd) +1;
+  maxfd = MAXFD(fileno(stdin), vid_fd) + 1;
 
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY); // Reset background color
 
   // FIXME: as a hack, I'm redirecting stderr to /dev/null to get rid of annoying v4l2 error messages
-  if(close(fileno(stderr)) == 0)
-      open("/dev/null", O_RDWR);
+  if (close(fileno(stderr)) == 0)
+    open("/dev/null", O_RDWR);
 
   while (running)
   {
-    if(g_video_out.vid_params->is_on == 1)
-       sprintf(sender_label1, "[Video ON]");
+    if (g_video_out.vid_params->is_on == 1)
+      sprintf(sender_label1, "[Video ON]");
     else
-       sprintf(sender_label1, "[Video OFF]");
+      sprintf(sender_label1, "[Video OFF]");
     sprintf(sender_label, "%s %s", sender_label1, sender_label2);
     caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
-    caca_fill_box(cv, col_offset, row_offset_self-1, text_buffer_size, 1, ' ');
-    caca_put_str(cv, col_offset, row_offset_self-1, sender_label);
+    caca_fill_box(cv, col_offset, row_offset_self - 1, text_buffer_size, 1, ' ');
+    caca_put_str(cv, col_offset, row_offset_self - 1, sender_label);
 
     caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY); // Reset background color
     // Always reset the cursor on the active textentry
@@ -517,9 +543,9 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
       FD_SET(text_fd, &readset);
       FD_SET(text_fd, &writeset);
 
-      if ( select( maxfd, &readset, &writeset, NULL, pto ) > 0 )
+      if (select(maxfd, &readset, &writeset, NULL, pto) > 0)
       {
-        if ( FD_ISSET(text_fd, &readset))
+        if (FD_ISSET(text_fd, &readset))
         {
           memset(recline, '\0', MAXLINE);
           new_recv_entry_bytes = recv(text_fd, recline, MAXLINE, 0);
@@ -533,12 +559,12 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
         else
           new_recv_video_bytes = 0;
 
-        if ( FD_ISSET(text_fd, &writeset))
+        if (FD_ISSET(text_fd, &writeset))
         {
           if (entries_self[e].size > 0 && newline_entered == 1 && send_succesful == 0)
           {
             int sent_bytes = send(text_fd, sendline, entries_self[e].size, 0);
-            if(sent_bytes >= 0)
+            if (sent_bytes >= 0)
             {
               send_succesful = 1;
             }
@@ -558,7 +584,8 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     if (new_recv_video_bytes > 0)
     {
       // TODO: try to center window
-      ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes, win->caca_format);
+      ssize_t imported_bytes = caca_import_area_from_memory(cv, col_offset, 0, video_in_buffer, new_recv_video_bytes,
+                                                            win->caca_format);
       //      ssize_t imported_bytes = caca_import_area_from_memory(cv, caca_get_canvas_width(cv)/2-win->cols/2, 0, video_in_buffer, new_recv_video_bytes, win->caca_format);
       caca_fill_box(cv, col_offset, win->video_lines, text_buffer_size, 1, ' ');
       char import_label[100] = "";
@@ -643,9 +670,9 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
       entries_self[i].size = 0;
       entries_self[i].cursor = 0;
     }
-    else // Always update last line (even if not changed...to hide error messages from v4l2) //FIXME
-    {
-      //if (entries_self[e].changed == 1)
+    else
+    { // Update last entry if changed
+      if (entries_self[e].changed == 1)
       {
         caca_set_color_ansi(cv, CACA_WHITE, CACA_DARKGRAY);
         caca_fill_box(cv, col_offset, e + row_offset_self, text_buffer_size, 1, ' ');
@@ -702,7 +729,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
       }
       case CACA_KEY_CTRL_V:
         // Toggle the state of video streaming
-        if((g_video_out.vid_params->is_on != 1) && (g_video_out.vid_params->is_ok == 1))
+        if ((g_video_out.vid_params->is_on != 1) && (g_video_out.vid_params->is_ok == 1))
           turn_video_stream_on(g_video_out.vid_params);
         else
           turn_video_stream_off(g_video_out.vid_params);
@@ -770,93 +797,411 @@ int set_video(video_params *vid_params, char *dev_name, Window *win, int img_wid
   vid_params->is_ok = 0;
   vid_params->is_on = 0; // Streaming is not "on" yet
 
-  // ------ Arbitrary settings:
-  vid_params->caca_format = win->caca_format;
-  vid_params->caca_dither = "fstein";
-  vid_params->number_of_buffers = 2; // Arbitrary double buffer
-  vid_params->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  vid_params->memory = V4L2_MEMORY_MMAP;
-  unsigned int font_width = 6, font_height = 10; // FIXME: purely arbitrary based on the usual ansi format for terminals
-  // -------------------------------------------------------
-
-  vid_params->img_width = img_width;
-  vid_params->img_height = img_height;
-  vid_params->aspect_ratio = ((float)img_width / (float)img_height) * ((float)font_height / font_width);
-  vid_params->cv_rows = win->video_lines;
-  vid_params->cv_cols = (unsigned int)(vid_params->aspect_ratio * (float)vid_params->cv_rows);
-
-  vid_params->caca_gamma = -1;
-  vid_params->caca_brightness = -1;
-  vid_params->caca_contrast = -1;
-
-  strcpy(vid_params->dev_name, dev_name);
-  vid_params->v4l_fd = v4l2_open(vid_params->dev_name, O_RDWR | O_NONBLOCK, 0);
-  if (vid_params->v4l_fd < 0)
+  if(strlen(dev_name) > 0)
   {
-    perror("set_video: Cannot open video device\n");
-    exit(EXIT_FAILURE);
-  }
+    // ------ Arbitrary settings:
+    vid_params->caca_format = win->caca_format;
+    vid_params->caca_dither = "fstein";
+    vid_params->number_of_buffers = 2;// Arbitrary double buffer
+    vid_params->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    vid_params->memory = V4L2_MEMORY_MMAP;
+    unsigned int font_width = 6, font_height = 10;// FIXME: purely arbitrary based on the usual ansi format for terminals
+    // -------------------------------------------------------
 
-  CLEAR(vid_params->fmt);
-  vid_params->fmt.type = vid_params->type;
-  vid_params->fmt.fmt.pix.width = img_width;
-  vid_params->fmt.fmt.pix.height = img_height;
-  vid_params->fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24; // The simplest 3-color channels 8bpp format
-  vid_params->fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-  xioctl(vid_params->v4l_fd, VIDIOC_S_FMT, &(vid_params->fmt));
-  if (vid_params->fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24)
-  {
-    perror("set_video: Libv4l didn't accept RGB24 format. Can't proceed.\n");
-    exit(EXIT_FAILURE);
-  }
-  if ((vid_params->fmt.fmt.pix.width != img_width) || (vid_params->fmt.fmt.pix.height != img_height))
-    printf("Warning: driver is sending image at %dx%d\n", vid_params->fmt.fmt.pix.width,
-           vid_params->fmt.fmt.pix.height);
+    vid_params->img_width = img_width;
+    vid_params->img_height = img_height;
+    vid_params->aspect_ratio = ((float)img_width / (float)img_height) * ((float)font_height / font_width);
+    vid_params->cv_rows = win->video_lines;
+    vid_params->cv_cols = (unsigned int)(vid_params->aspect_ratio * (float)vid_params->cv_rows);
 
-  CLEAR(vid_params->req);
-  vid_params->req.count = vid_params->number_of_buffers;
-  vid_params->req.type = vid_params->type;
-  vid_params->req.memory = vid_params->memory;
-  xioctl(vid_params->v4l_fd, VIDIOC_REQBUFS, &(vid_params->req));
+    vid_params->caca_gamma = -1;
+    vid_params->caca_brightness = -1;
+    vid_params->caca_contrast = -1;
 
-  vid_params->buffers = calloc(vid_params->req.count, sizeof(*(vid_params->buffers))); // A double buffer (there is only 2 requests)
-
-  for (n_buffers = 0; n_buffers < vid_params->req.count; ++n_buffers)
-  {
-    CLEAR(vid_params->buf);
-
-    vid_params->buf.type = vid_params->type;
-    vid_params->buf.memory = vid_params->memory;
-    vid_params->buf.index = n_buffers;
-
-    xioctl(vid_params->v4l_fd, VIDIOC_QUERYBUF, &(vid_params->buf));
-
-    vid_params->buffers[n_buffers].length = vid_params->buf.length;
-    vid_params->buffers[n_buffers].start = v4l2_mmap(NULL, vid_params->buf.length, PROT_READ | PROT_WRITE, MAP_SHARED,
-                                                     vid_params->v4l_fd, vid_params->buf.m.offset);
-
-    if (MAP_FAILED == vid_params->buffers[n_buffers].start)
+    strcpy(vid_params->dev_name, dev_name);
+    vid_params->v4l_fd = v4l2_open(vid_params->dev_name, O_RDWR | O_NONBLOCK, 0);
+    if(vid_params->v4l_fd > 0)
     {
-      perror("set_video: mmap");
-      exit(EXIT_FAILURE);
+      CLEAR(vid_params->fmt);
+      vid_params->fmt.type = vid_params->type;
+      vid_params->fmt.fmt.pix.width = img_width;
+      vid_params->fmt.fmt.pix.height = img_height;
+      vid_params->fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24; // The simplest 3-color channels 8bpp format
+      vid_params->fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+      xioctl(vid_params->v4l_fd, VIDIOC_S_FMT, &(vid_params->fmt));
+      if (vid_params->fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24)
+      {
+        perror("set_video: Libv4l didn't accept RGB24 format. Can't proceed.\n");
+        exit(EXIT_FAILURE);
+      }
+      if ((vid_params->fmt.fmt.pix.width != img_width) || (vid_params->fmt.fmt.pix.height != img_height))
+      printf("Warning: driver is sending image at %dx%d\n", vid_params->fmt.fmt.pix.width,
+          vid_params->fmt.fmt.pix.height);
+
+      CLEAR(vid_params->req);
+      vid_params->req.count = vid_params->number_of_buffers;
+      vid_params->req.type = vid_params->type;
+      vid_params->req.memory = vid_params->memory;
+      xioctl(vid_params->v4l_fd, VIDIOC_REQBUFS, &(vid_params->req));
+
+      vid_params->buffers = calloc(vid_params->req.count, sizeof(*(vid_params->buffers))); // A double buffer (there is only 2 requests)
+
+      for (n_buffers = 0; n_buffers < vid_params->req.count; ++n_buffers)
+      {
+        CLEAR(vid_params->buf);
+
+        vid_params->buf.type = vid_params->type;
+        vid_params->buf.memory = vid_params->memory;
+        vid_params->buf.index = n_buffers;
+
+        xioctl(vid_params->v4l_fd, VIDIOC_QUERYBUF, &(vid_params->buf));
+
+        vid_params->buffers[n_buffers].length = vid_params->buf.length;
+        vid_params->buffers[n_buffers].start = v4l2_mmap(NULL, vid_params->buf.length, PROT_READ | PROT_WRITE, MAP_SHARED,
+            vid_params->v4l_fd, vid_params->buf.m.offset);
+
+        if (MAP_FAILED == vid_params->buffers[n_buffers].start)
+        {
+          perror("set_video: mmap");
+          exit(EXIT_FAILURE);
+        }
+      }
+
+      for (i = 0; i < n_buffers; ++i)
+      {
+        CLEAR(vid_params->buf);
+        vid_params->buf.type = vid_params->type;
+        vid_params->buf.memory = vid_params->memory;
+        vid_params->buf.index = i;
+        xioctl(vid_params->v4l_fd, VIDIOC_QBUF, &(vid_params->buf));
+      }
+
+      // If we got passed these tests and settings, then the video device is on and readily streaming
+      vid_params->is_ok = 1;
+      // Last, turn the stream on
+      // DON'T: turn_video_stream_on(vid_params);
     }
   }
-
-  for (i = 0; i < n_buffers; ++i)
+  else
   {
-    CLEAR(vid_params->buf);
-    vid_params->buf.type = vid_params->type;
-    vid_params->buf.memory = vid_params->memory;
-    vid_params->buf.index = i;
-    xioctl(vid_params->v4l_fd, VIDIOC_QBUF, &(vid_params->buf));
+    perror("set_video: Cannot open video device\n");
+    //exit(EXIT_FAILURE);
   }
 
-  // If we got passed these tests and settings, then the video device is on and readily streaming
-  vid_params->is_ok = 1;
-  // Last, turn the stream on
-  turn_video_stream_on(vid_params);
-
   return vid_params->is_ok;
+}
+
+void set_peer_address(caca_canvas_t *cv, caca_display_t *dp, options *opts)
+{
+  int xo = caca_get_canvas_width(cv) - 2;
+  int yo = caca_get_canvas_height(cv) - 2;
+  unsigned int row_offset = 6;
+  unsigned int col_offset = 2;
+  int text_buffer_size = (MIN(caca_get_canvas_width(cv), BUFFER_SIZE)) - 2 * col_offset; // Leave padding (margin)
+  textentry addr_entry;
+  unsigned int j, size;
+  int running = 1;
+  int newline_entered = 0;
+
+  caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+  caca_clear_canvas(cv);
+  caca_draw_thin_box(cv, 1, 1, xo, yo);
+
+  caca_put_str(cv, (xo - strlen("cacatalk demo")) / 2, 3, "cacatalk demo");
+  caca_put_str(cv, (xo - strlen("==================")) / 2, 4, "==================");
+
+  caca_set_cursor(dp, 1); // Enable cursor
+
+  caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
+  char *prompt = "Enter IP address or name: ";
+  caca_fill_box(cv, col_offset, row_offset, strlen(prompt), 1, ' ');
+  caca_put_str(cv, col_offset, row_offset, prompt);
+
+  col_offset += strlen(prompt);
+
+  addr_entry.buffer[0] = 0;
+  addr_entry.size = 0;
+  addr_entry.cursor = 0;
+  addr_entry.changed = 1;
+
+  caca_refresh_display(dp);
+
+  while (running)
+  {
+    // Always reset the cursor on the active textentry (to hide the v4l2 errors)
+    caca_gotoxy(cv, col_offset + addr_entry.cursor, row_offset);
+
+    // Update self (sender) entries
+    if (newline_entered == 1)
+    {
+      size = addr_entry.size;
+      bzero(opts->peer_name, strlen(opts->peer_name));
+      for (j = 0; j < size; j++)
+        opts->peer_name[j] = addr_entry.buffer[j];
+
+      running = 0; // and quit
+      continue;
+    }
+    else // Only update the entry if changed
+    {
+      if (addr_entry.changed == 1)
+      {
+        caca_set_color_ansi(cv, CACA_BLUE, CACA_WHITE);
+        caca_fill_box(cv, col_offset, row_offset, text_buffer_size, 1, ' ');
+
+        size = addr_entry.size;
+        for (j = 0; j < size; j++)
+        {
+          caca_put_char(cv, col_offset + j, row_offset, addr_entry.buffer[j]);
+        }
+      }
+    }
+    // always reset flags after updating entries
+    addr_entry.changed = 0;
+    newline_entered = 0;
+
+    // Always reset the cursor on the active textentry (to hide the v4l2 errors)
+    caca_gotoxy(cv, col_offset + addr_entry.cursor, row_offset);
+    caca_refresh_display(dp);
+
+    caca_event_t ev;
+
+    //  timeout value in microseconds, -1 for blocking behaviour
+    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
+      continue;
+
+    switch (caca_get_event_key_ch(&ev))
+    {
+      case CACA_KEY_ESCAPE:
+        running = 0;
+        // Free string buffers
+        break;
+        //case CACA_KEY_TAB:
+      case CACA_KEY_RETURN:
+      {
+        // Set flags
+        newline_entered = 1;
+        addr_entry.changed = 1;
+        break;
+      }
+      case CACA_KEY_HOME:
+        addr_entry.cursor = 0;
+        break;
+      case CACA_KEY_END:
+        addr_entry.cursor = addr_entry.size;
+        break;
+      case CACA_KEY_LEFT:
+        if (addr_entry.cursor)
+          addr_entry.cursor--;
+        break;
+      case CACA_KEY_RIGHT:
+        if (addr_entry.cursor < addr_entry.size)
+          addr_entry.cursor++;
+        break;
+      case CACA_KEY_DELETE:
+        if (addr_entry.cursor < addr_entry.size)
+        {
+          memmove(addr_entry.buffer + addr_entry.cursor, addr_entry.buffer + addr_entry.cursor + 1,
+                  (addr_entry.size - addr_entry.cursor + 1) * 4);
+          addr_entry.size--;
+          addr_entry.changed = 1;
+        }
+        break;
+      case CACA_KEY_BACKSPACE:
+        if (addr_entry.cursor)
+        {
+          memmove(addr_entry.buffer + addr_entry.cursor - 1, addr_entry.buffer + addr_entry.cursor,
+                  (addr_entry.size - addr_entry.cursor) * 4);
+          addr_entry.size--;
+          addr_entry.cursor--;
+          addr_entry.changed = 1;
+        }
+        break;
+      default:
+        if (addr_entry.size < BUFFER_SIZE)
+        {
+          memmove(addr_entry.buffer + addr_entry.cursor + 1, addr_entry.buffer + addr_entry.cursor,
+                  (addr_entry.size - addr_entry.cursor) * 4);
+          addr_entry.buffer[addr_entry.cursor] = caca_get_event_key_utf32(&ev);
+          addr_entry.size++;
+          addr_entry.cursor++;
+          addr_entry.changed = 1;
+        }
+        break;
+    }
+
+  }
+}
+
+void change_video_device(caca_canvas_t *cv, caca_display_t *dp, options *opts, video_params *vid_params, Window *win,
+                         int img_width, int img_height)
+{
+  int xo = caca_get_canvas_width(cv) - 2;
+  int yo = caca_get_canvas_height(cv) - 2;
+  unsigned int row_offset = 6;
+  unsigned int col_offset = 2;
+  int text_buffer_size = (MIN(caca_get_canvas_width(cv), BUFFER_SIZE)) - 2 * col_offset; // Leave padding (margin)
+  textentry addr_entry;
+  unsigned int j, size;
+  int running = 1;
+  int newline_entered = 0;
+
+  caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
+  caca_clear_canvas(cv);
+  caca_draw_thin_box(cv, 1, 1, xo, yo);
+
+  caca_put_str(cv, (xo - strlen("cacatalk demo")) / 2, 3, "cacatalk demo");
+  caca_put_str(cv, (xo - strlen("==================")) / 2, 4, "==================");
+
+  caca_set_cursor(dp, 1); // Enable cursor
+
+  caca_set_color_ansi(cv, CACA_WHITE, CACA_BLUE);
+  char dev_label[MAXPATHLEN] = "";
+  if (vid_params->is_ok == 1)
+    sprintf(dev_label, "Current video device [%s] is working", opts->video_device_name);
+  else
+    sprintf(dev_label, "Please set the path to a video device.");
+  caca_put_str(cv, col_offset, row_offset, dev_label);
+
+  row_offset += 2;
+  char *prompt = "Enter video device name: ";
+  caca_fill_box(cv, col_offset, row_offset, strlen(prompt), 1, ' ');
+  caca_put_str(cv, col_offset, row_offset, prompt);
+
+  col_offset += strlen(prompt);
+
+  addr_entry.buffer[0] = 0;
+  addr_entry.size = 0;
+  addr_entry.cursor = 0;
+  addr_entry.changed = 1;
+
+  caca_refresh_display(dp);
+
+  while (running)
+  {
+    // Always reset the cursor on the active textentry (to hide the v4l2 errors)
+    caca_gotoxy(cv, col_offset + addr_entry.cursor, row_offset);
+
+    // Update self (sender) entries
+    if (newline_entered == 1)
+    {
+      size = addr_entry.size;
+      bzero(opts->video_device_name, strlen(opts->video_device_name));
+      for (j = 0; j < size; j++)
+        opts->video_device_name[j] = addr_entry.buffer[j];
+
+      // Try to set video to see if its working
+      if (set_video(vid_params, opts->video_device_name, win, img_width, img_height) > 0)
+      {
+        // Update prompt
+        if (vid_params->is_ok == 1)
+          sprintf(dev_label, "Current video device [%s] is working", opts->video_device_name);
+        else
+          sprintf(dev_label, "Please set the path to a video device.");
+        caca_put_str(cv, col_offset - strlen(prompt), row_offset - 2, dev_label);
+        running = 0; // and quit
+      }
+      else // Not successful video set up (Try again)
+      {
+        bzero(opts->video_device_name, strlen(opts->video_device_name));
+        addr_entry.buffer[0] = 0;
+        addr_entry.size = 0;
+        addr_entry.cursor = 0;
+        addr_entry.changed = 1;
+        newline_entered = 0; // To try again
+      }
+
+      continue;
+    }
+    else // Only update the entry if changed
+    {
+      if (addr_entry.changed == 1)
+      {
+        caca_set_color_ansi(cv, CACA_BLUE, CACA_WHITE);
+        caca_fill_box(cv, col_offset, row_offset, text_buffer_size, 1, ' ');
+
+        size = addr_entry.size;
+        for (j = 0; j < size; j++)
+        {
+          caca_put_char(cv, col_offset + j, row_offset, addr_entry.buffer[j]);
+        }
+      }
+    }
+    // always reset flags after updating entries
+    addr_entry.changed = 0;
+    newline_entered = 0;
+
+    // Always reset the cursor on the active textentry (to hide the v4l2 errors)
+    caca_gotoxy(cv, col_offset + addr_entry.cursor, row_offset);
+    caca_refresh_display(dp);
+
+    caca_event_t ev;
+
+    //  timeout value in microseconds, -1 for blocking behaviour
+    if (caca_get_event(dp, CACA_EVENT_KEY_PRESS, &ev, -1) == 0)
+      continue;
+
+    switch (caca_get_event_key_ch(&ev))
+    {
+      case CACA_KEY_ESCAPE:
+        running = 0;
+        // Free string buffers
+        break;
+        //case CACA_KEY_TAB:
+      case CACA_KEY_RETURN:
+      {
+        // Set flags
+        newline_entered = 1;
+        addr_entry.changed = 1;
+        break;
+      }
+      case CACA_KEY_HOME:
+        addr_entry.cursor = 0;
+        break;
+      case CACA_KEY_END:
+        addr_entry.cursor = addr_entry.size;
+        break;
+      case CACA_KEY_LEFT:
+        if (addr_entry.cursor)
+          addr_entry.cursor--;
+        break;
+      case CACA_KEY_RIGHT:
+        if (addr_entry.cursor < addr_entry.size)
+          addr_entry.cursor++;
+        break;
+      case CACA_KEY_DELETE:
+        if (addr_entry.cursor < addr_entry.size)
+        {
+          memmove(addr_entry.buffer + addr_entry.cursor, addr_entry.buffer + addr_entry.cursor + 1,
+                  (addr_entry.size - addr_entry.cursor + 1) * 4);
+          addr_entry.size--;
+          addr_entry.changed = 1;
+        }
+        break;
+      case CACA_KEY_BACKSPACE:
+        if (addr_entry.cursor)
+        {
+          memmove(addr_entry.buffer + addr_entry.cursor - 1, addr_entry.buffer + addr_entry.cursor,
+                  (addr_entry.size - addr_entry.cursor) * 4);
+          addr_entry.size--;
+          addr_entry.cursor--;
+          addr_entry.changed = 1;
+        }
+        break;
+      default:
+        if (addr_entry.size < BUFFER_SIZE)
+        {
+          memmove(addr_entry.buffer + addr_entry.cursor + 1, addr_entry.buffer + addr_entry.cursor,
+                  (addr_entry.size - addr_entry.cursor) * 4);
+          addr_entry.buffer[addr_entry.cursor] = caca_get_event_key_utf32(&ev);
+          addr_entry.size++;
+          addr_entry.cursor++;
+          addr_entry.changed = 1;
+        }
+        break;
+    }
+
+  }
 }
 
 int turn_video_stream_on(video_params *vid_params)
@@ -920,22 +1265,89 @@ int xioctl(int fd, int request, void *arg)
   return r;
 }
 
-void set_window(int fd, unsigned short video_lines, Window *win)
+void set_window(int fd, unsigned short video_lines, Window *win, caca_canvas_t *cv)
 {
-  struct winsize size;
+  win->cols = caca_get_canvas_width(cv);
+  win->rows = caca_get_canvas_height(cv);
 
-  if (ioctl(fd, TIOCGWINSZ, &size) < 0)
-  {
-    perror("TIOCGWINSZ error");
-    return;
-  }
-  win->rows = size.ws_row;
-  win->cols = size.ws_col;
+  /* Only good for terminals:
+   struct winsize size;
+   if (ioctl(fd, TIOCGWINSZ, &size) < 0)
+   {
+   perror("TIOCGWINSZ error");
+   return;
+   }
+   win->rows = size.ws_row;
+   win->cols = size.ws_col;
+   */
   win->video_lines = video_lines;
   // Default assuming a 4:3 aspect ratio and 10:6 font
-  float aspect_ratio = (float) 4 / 3 * (float) 10 / 6;
+  float aspect_ratio = (float)4 / 3 * (float)10 / 6;
   win->video_cols = (unsigned int)(aspect_ratio * (float)video_lines);
   win->caca_format = "caca"; // Arbitrary format for caca export/import
+}
+
+int get_options(int argc, char **argv, options * opt)
+{
+  opterr = 0;
+  int c;
+
+  // Initialize defaults
+  opt->video_device_name[0] = '\0';
+//  strcpy(opt->video_device_name, "/dev/video0\0");
+  memset(opt->peer_name, '\0', MAXHOSTNAMELEN);
+  get_IP_addresses(opt->host_IPv4, 0);
+  opt->driver_choice = 2; // Default to ncurses terminal
+  int user_driver_choice = -1;
+  // Initialize hard-coded caca display choices for the device where to draw the caca canvas
+  opt->driver_options[0] = NULL; // Selects default caca display driver (usually an X window)
+  opt->driver_options[1] = "ncurses";
+  opt->driver_options[2] = "conio"; // Fails TODO: install conio
+  opt->driver_options[3] = "gl";
+  opt->driver_options[4] = "raw"; // Fails
+  opt->driver_options[5] = "vga"; // Fails
+  opt->driver_options[6] = "slang";
+
+  while ((c = getopt(argc, argv, "d:v:p:")) != -1) // The ":" next to a flag indicates to expect a value
+  {
+    switch (c)
+    {
+      case 'd':
+        user_driver_choice = atoi(optarg);
+        if (user_driver_choice > 0) // Be safe with values above zero
+          opt->driver_choice = user_driver_choice;
+        break;
+      case 'v':
+        strcpy(opt->video_device_name, optarg);
+        break;
+      case 'p':
+        strcpy(opt->peer_name, optarg);
+        break;
+      case '?':
+      {
+        if (optopt == 'v' || optopt == 'p')
+          fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+        else if (isprint (optopt))
+          fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+        else
+          fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+        return -1;
+      }
+      default:
+        abort();
+        break;
+    }
+  }
+
+  // Get non-option arguments (usernames, in this case)
+  /* None so far
+   for (int index = optind; index < argc; index++)
+   {
+   argv[index];
+   }
+   */
+
+  return 0;
 }
 
 // ******************** THREADS *************************
@@ -971,17 +1383,16 @@ void * send_video_thread(void * arguments)
   else
     rows = g_video_out.win->rows;
 
-    cv = caca_create_canvas(cols, rows);
-    if (!cv)
-    {
-      perror(" send_video_thread: unable to initialise libcaca canvas\n");
-      exit(EXIT_FAILURE);
-    }
-
-
-  while(!g_video_out.quit)
+  cv = caca_create_canvas(cols, rows);
+  if (!cv)
   {
-    while((g_video_out.socketfd != -1) && (g_video_out.vid_params->is_on == 1) &&  (g_video_out.vid_params->is_ok == 1) )
+    perror(" send_video_thread: unable to initialise libcaca canvas\n");
+    exit(EXIT_FAILURE);
+  }
+
+  while (!g_video_out.quit)
+  {
+    while ((g_video_out.socketfd != -1) && (g_video_out.vid_params->is_on == 1) && (g_video_out.vid_params->is_ok == 1))
     {
       do
       {
@@ -1009,16 +1420,17 @@ void * send_video_thread(void * arguments)
 
       //-----------------------------------------
       // Persistent loading
-      while( (im = load_image_from_V4L_buffer(&(g_video_out.vid_params->fmt),
+      while ((im = load_image_from_V4L_buffer(&(g_video_out.vid_params->fmt),
                                               &(g_video_out.vid_params->buffers[g_video_out.vid_params->buf.index]),
-                                              g_video_out.vid_params->buf.bytesused)) == NULL)
+                                              g_video_out.vid_params->buf.bytesused)) == NULL )
       {
         fprintf(stderr, "grab: Unable to load caca from V4L\n");
       }
 
       caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY);
       caca_clear_canvas(cv);
-      if (caca_set_dither_algorithm(im->dither, g_video_out.vid_params->caca_dither ? g_video_out.vid_params->caca_dither : "fstein"))
+      if (caca_set_dither_algorithm(
+          im->dither, g_video_out.vid_params->caca_dither ? g_video_out.vid_params->caca_dither : "fstein"))
       {
         fprintf(stderr, "grab: Can't dither image with algorithm '%s'\n", g_video_out.vid_params->caca_dither);
         unload_image(im);
@@ -1034,7 +1446,8 @@ void * send_video_thread(void * arguments)
       if (g_video_out.vid_params->caca_gamma != -1)
         caca_set_dither_gamma(im->dither, g_video_out.vid_params->caca_gamma);
 
-      caca_dither_bitmap(cv, 0, 0, g_video_out.vid_params->cv_cols, g_video_out.vid_params->cv_rows, im->dither, im->pixels);
+      caca_dither_bitmap(cv, 0, 0, g_video_out.vid_params->cv_cols, g_video_out.vid_params->cv_rows, im->dither,
+                         im->pixels);
 
       //unload_image(im); // Enable it if using memcpy in the loading
 
@@ -1057,9 +1470,9 @@ void * send_video_thread(void * arguments)
             // This is what needs to be sent through the socket
             //      export = caca_export_canvas_to_memory(cv, vid_params->caca_format ? format : "ansi", &exported_bytes);
             //            export = caca_export_area_to_memory(cv, 0, 0, cols, rows, vid_params->caca_format ? vid_params->caca_format : "ansi", &exported_bytes);
-            export = caca_export_area_to_memory(cv, 0, 0, cols, rows,
-                                                g_video_out.vid_params->caca_format ? g_video_out.vid_params->caca_format : "caca",
-                                                    &exported_bytes);
+            export = caca_export_area_to_memory(
+                cv, 0, 0, cols, rows,
+                g_video_out.vid_params->caca_format ? g_video_out.vid_params->caca_format : "caca", &exported_bytes);
             if (!export)
             {
               fprintf(stderr, "grab: Can't export to format '%s'\n", g_video_out.vid_params->caca_format);
@@ -1090,57 +1503,7 @@ void * send_video_thread(void * arguments)
     }
   }
 
-  pthread_exit(NULL);
+  pthread_exit(NULL );
   return NULL ;
 }
 
-int get_options(int argc, char **argv, options * opt)
-{
-  opterr = 0;
-  int c;
-
-  // Initialize defaults
-  strcpy(opt->video_device_name, "/dev/video0\0");
-  memset(opt->peer_name, '\0', MAXHOSTNAMELEN);
-  opt->is_server = 0; // Socket client is the default behavior
-  get_IP_addresses(opt->host_IPv4, 0);
-
-  while ((c = getopt(argc, argv, "sv:p:")) != -1) // The ":" next to a flag indicates to expect a value
-  {
-    switch (c)
-    {
-      case 's':
-        opt->is_server = 1;
-        break;
-      case 'v':
-        strcpy(opt->video_device_name, optarg);
-        break;
-      case 'p':
-        strcpy(opt->peer_name, optarg);
-        break;
-      case '?':
-      {
-        if (optopt == 'v' || optopt == 'p')
-          fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-        else if (isprint (optopt))
-          fprintf(stderr, "Unknown option `-%c'.\n", optopt);
-        else
-          fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
-        return -1;
-      }
-      default:
-        abort();
-        break;
-    }
-  }
-
-  // Get non-option arguments (usernames, in this case)
-  /* None so far
-   for (int index = optind; index < argc; index++)
-   {
-   argv[index];
-   }
-   */
-
-  return 0;
-}

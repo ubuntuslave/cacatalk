@@ -51,7 +51,8 @@ typedef struct options_s
   char video_device_name[BUFFER_SIZE]; ///< The video device name
   char peer_name[MAXHOSTNAMELEN]; ///< The IP address or hostname of the peer to connect to
   char host_IPv4[MAXHOSTNAMELEN]; ///< The IP address for the local host
-  int is_server; ///< To indicate socket behavior (either as server=1, or client=0 (default))
+  const char* driver_options[7]; ///< A list of strings for caca display driver options
+  unsigned int driver_choice; ///< To choose an index from the array of drivers options
 } options;
 
 typedef struct video_params_s {
@@ -90,6 +91,15 @@ typedef struct video_out_args_s {
     video_params *vid_params; ///< Pointer to host's video device parameters structure
 } video_out_args;
 
+/** @brief  Fills structure with current window dimensions
+ *
+ * @param fd  A file descriptor number related to the terminal (usually STDIN_FILENO)
+ * @param video_lines The number of rows (lines) used for the video area on the canvas
+ * @param win A pointer to our custom Window element to which information will be assigned
+ * @param cv  A pointer to the caca canvas for which we will identify dimensions of.
+ */
+void set_window(int fd, unsigned short video_lines, Window *win, caca_canvas_t *cv);
+
 /** @brief It draws the main menu indicating posible options tied to keyboard commands
  *
  * @param cv  A pointer to the caca canvas
@@ -97,11 +107,37 @@ typedef struct video_out_args_s {
  */
 void display_menu(caca_canvas_t *cv, options * arg_opts);
 
-/** @brief TODO
+/** @brief Sets the video device using the V4L2 driver
+ *
+ * @param vid_params  A pointer to the parameters structure for the video device to which the request will be made to.
+ * @param dev_name   The path to the video device name (e.g. /dev/video0)
+ * @param win  A pointer to the window parameters structure to be passed as setting video
+ * @param img_width  The video frame width in pixels
+ * @param img_height The video frame heigh in pixels
  *
  * @return the video device file descriptor (greater than -1 if video was set/open successfully)
  */
 int set_video(video_params *vid_params, char *dev_name, Window *win, int img_width, int img_height);
+
+/** @brief Sets an IP address or hostname to the peer to establish connection with
+ *
+ * @param cv  A pointer to the caca canvas
+ * @param dp  A pointer to the caca display
+ * @param opts  The current argument options structure into which the new hostname or IP address will be saved
+ */
+void set_peer_address(caca_canvas_t *cv, caca_display_t *dp, options *opts);
+
+/** @brief Changes or sets the video device to be used with cacatalk
+ *
+ * @param cv  A pointer to the caca canvas
+ * @param dp  A pointer to the caca display
+ * @param opts  The current argument options structure into which the new hostname or IP address will be saved
+ * @param vid_params  A pointer to the parameters structure for the video device to which the request will be made to.
+ * @param win  A pointer to the window parameters structure to be passed as setting video
+ * @param img_width  The video frame width in pixels
+ * @param img_height The video frame heigh in pixels
+ */
+void change_video_device(caca_canvas_t *cv, caca_display_t *dp, options *opts, video_params *vid_params, Window *win, int img_width, int img_height);
 
 /** @brief Stop streaming video and close V4L video device
  *
