@@ -1,0 +1,81 @@
+.TH "include/common_image.h" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+include/common_image.h \- 
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <linux/videodev2\&.h>\fP
+.br
+\fC#include <libv4l2\&.h>\fP
+.br
+\fC#include <caca\&.h>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBbuffer\fP"
+.br
+.RI "\fIA buffer place holder to be used with video streaming buffers given by the v4l device\&. \fP"
+.ti -1c
+.RI "struct \fBimage\fP"
+.br
+.RI "\fIAn image object to indicate the corresponding pixels of a video buffer in memory and other parameters, such as widht, height (pixels) and the caca dither format of choice\&. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "struct \fBimage\fP * \fBload_image_from_V4L_buffer\fP (struct v4l2_format *fmt, struct \fBbuffer\fP *buf, int bytesused)"
+.br
+.RI "\fIIt loads an image from the v4l buffer\&. \fP"
+.ti -1c
+.RI "void \fBunload_image\fP (struct \fBimage\fP *)"
+.br
+.RI "\fIIt unloads the image from the v4l memory buffer\&. \fP"
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "struct \fBimage\fP* \fBload_image_from_V4L_buffer\fP (struct v4l2_format *fmt, struct \fBbuffer\fP *buf, intbytesused)\fC [read]\fP"
+.PP
+It loads an image from the v4l buffer\&. \fBParameters:\fP
+.RS 4
+\fIfmt\fP The v4l2 stream data format 
+.br
+\fIbuf\fP The buffer structure to memory location 
+.br
+\fIbytesused\fP The number of bytes used by the buffer
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+A shared pointer to the bytes allocated by the image structure 
+.RE
+.PP
+
+.PP
+Definition at line 20 of file common_image\&.c\&.
+.PP
+References image::dither, image::h, image::pixels, buffer::start, and image::w\&.
+.PP
+Referenced by send_video_thread()\&.
+.SS "void \fBunload_image\fP (struct \fBimage\fP *)"
+.PP
+It unloads the image from the v4l memory buffer\&. \fBParameters:\fP
+.RS 4
+\fIimage\fP The shared pointer to the bytes allocated to the image structure 
+.RE
+.PP
+
+.PP
+Definition at line 132 of file common_image\&.c\&.
+.PP
+References image::dither, and image::pixels\&.
+.PP
+Referenced by send_video_thread()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

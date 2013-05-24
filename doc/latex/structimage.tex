@@ -1,0 +1,107 @@
+\hypertarget{structimage}{\section{image \-Struct \-Reference}
+\label{structimage}\index{image@{image}}
+}
+
+
+\-An image object to indicate the corresponding pixels of a video buffer in memory and other parameters, such as widht, height (pixels) and the caca dither format of choice.  
+
+
+
+
+{\ttfamily \#include $<$common\-\_\-image.\-h$>$}
+
+\subsection*{\-Public \-Attributes}
+\begin{DoxyCompactItemize}
+\item 
+char $\ast$ \hyperlink{structimage_abc3d14f227fa7594c545fb7e24b8943f}{pixels}
+\begin{DoxyCompactList}\small\item\em \-Points to the starting location in memory buffer. \end{DoxyCompactList}\item 
+unsigned int \hyperlink{structimage_ac4f737a4fb48b7bf4407d5fbe3da141d}{w}
+\item 
+unsigned int \hyperlink{structimage_a4fae3d432ea8b597707f29f60124807f}{h}
+\begin{DoxyCompactList}\small\item\em width and height (in pixels), respectively \end{DoxyCompactList}\item 
+struct caca\-\_\-dither $\ast$ \hyperlink{structimage_a31d7561b213cedafefd358611142691a}{dither}
+\begin{DoxyCompactList}\small\item\em \-The chosen libcaca dither format. \end{DoxyCompactList}\item 
+void $\ast$ \hyperlink{structimage_af79bc78a92bf22a8bb06c5ae706a2db9}{priv}
+\begin{DoxyCompactList}\small\item\em \-Unused. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{\-Detailed \-Description}
+\-An image object to indicate the corresponding pixels of a video buffer in memory and other parameters, such as widht, height (pixels) and the caca dither format of choice. 
+
+\-Definition at line 33 of file common\-\_\-image.\-h.
+
+
+
+\subsection{\-Member \-Data \-Documentation}
+\hypertarget{structimage_a31d7561b213cedafefd358611142691a}{\index{image@{image}!dither@{dither}}
+\index{dither@{dither}!image@{image}}
+\subsubsection[{dither}]{\setlength{\rightskip}{0pt plus 5cm}struct caca\-\_\-dither$\ast$ {\bf image\-::dither}}}\label{structimage_a31d7561b213cedafefd358611142691a}
+
+
+\-The chosen libcaca dither format. 
+
+
+
+\-Definition at line 37 of file common\-\_\-image.\-h.
+
+
+
+\-Referenced by load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer(), send\-\_\-video\-\_\-thread(), and unload\-\_\-image().
+
+\hypertarget{structimage_a4fae3d432ea8b597707f29f60124807f}{\index{image@{image}!h@{h}}
+\index{h@{h}!image@{image}}
+\subsubsection[{h}]{\setlength{\rightskip}{0pt plus 5cm}unsigned int {\bf image\-::h}}}\label{structimage_a4fae3d432ea8b597707f29f60124807f}
+
+
+width and height (in pixels), respectively 
+
+
+
+\-Definition at line 36 of file common\-\_\-image.\-h.
+
+
+
+\-Referenced by load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer().
+
+\hypertarget{structimage_abc3d14f227fa7594c545fb7e24b8943f}{\index{image@{image}!pixels@{pixels}}
+\index{pixels@{pixels}!image@{image}}
+\subsubsection[{pixels}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf image\-::pixels}}}\label{structimage_abc3d14f227fa7594c545fb7e24b8943f}
+
+
+\-Points to the starting location in memory buffer. 
+
+
+
+\-Definition at line 35 of file common\-\_\-image.\-h.
+
+
+
+\-Referenced by load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer(), send\-\_\-video\-\_\-thread(), and unload\-\_\-image().
+
+\hypertarget{structimage_af79bc78a92bf22a8bb06c5ae706a2db9}{\index{image@{image}!priv@{priv}}
+\index{priv@{priv}!image@{image}}
+\subsubsection[{priv}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ {\bf image\-::priv}}}\label{structimage_af79bc78a92bf22a8bb06c5ae706a2db9}
+
+
+\-Unused. 
+
+
+
+\-Definition at line 38 of file common\-\_\-image.\-h.
+
+\hypertarget{structimage_ac4f737a4fb48b7bf4407d5fbe3da141d}{\index{image@{image}!w@{w}}
+\index{w@{w}!image@{image}}
+\subsubsection[{w}]{\setlength{\rightskip}{0pt plus 5cm}unsigned int {\bf image\-::w}}}\label{structimage_ac4f737a4fb48b7bf4407d5fbe3da141d}
+
+
+\-Definition at line 36 of file common\-\_\-image.\-h.
+
+
+
+\-Referenced by load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer().
+
+
+
+\-The documentation for this struct was generated from the following file\-:\begin{DoxyCompactItemize}
+\item 
+include/\hyperlink{common__image_8h}{common\-\_\-image.\-h}\end{DoxyCompactItemize}

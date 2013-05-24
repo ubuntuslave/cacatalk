@@ -4,7 +4,6 @@
 *.o
 *.bak
 *.pgm
-doc
 .project
 .cproject
 Debug

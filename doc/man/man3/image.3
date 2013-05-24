@@ -1,0 +1,78 @@
+.TH "image" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+image \- 
+.PP
+An image object to indicate the corresponding pixels of a video buffer in memory and other parameters, such as widht, height (pixels) and the caca dither format of choice\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <common_image\&.h>\fP
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "char * \fBpixels\fP"
+.br
+.RI "\fIPoints to the starting location in memory buffer\&. \fP"
+.ti -1c
+.RI "unsigned int \fBw\fP"
+.br
+.ti -1c
+.RI "unsigned int \fBh\fP"
+.br
+.RI "\fIwidth and height (in pixels), respectively \fP"
+.ti -1c
+.RI "struct caca_dither * \fBdither\fP"
+.br
+.RI "\fIThe chosen libcaca dither format\&. \fP"
+.ti -1c
+.RI "void * \fBpriv\fP"
+.br
+.RI "\fIUnused\&. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+An image object to indicate the corresponding pixels of a video buffer in memory and other parameters, such as widht, height (pixels) and the caca dither format of choice\&. 
+.PP
+Definition at line 33 of file common_image\&.h\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "struct caca_dither* \fBimage::dither\fP"
+.PP
+The chosen libcaca dither format\&. 
+.PP
+Definition at line 37 of file common_image\&.h\&.
+.PP
+Referenced by load_image_from_V4L_buffer(), send_video_thread(), and unload_image()\&.
+.SS "unsigned int \fBimage::h\fP"
+.PP
+width and height (in pixels), respectively 
+.PP
+Definition at line 36 of file common_image\&.h\&.
+.PP
+Referenced by load_image_from_V4L_buffer()\&.
+.SS "char* \fBimage::pixels\fP"
+.PP
+Points to the starting location in memory buffer\&. 
+.PP
+Definition at line 35 of file common_image\&.h\&.
+.PP
+Referenced by load_image_from_V4L_buffer(), send_video_thread(), and unload_image()\&.
+.SS "void* \fBimage::priv\fP"
+.PP
+Unused\&. 
+.PP
+Definition at line 38 of file common_image\&.h\&.
+.SS "unsigned int \fBimage::w\fP"
+.PP
+Definition at line 36 of file common_image\&.h\&.
+.PP
+Referenced by load_image_from_V4L_buffer()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

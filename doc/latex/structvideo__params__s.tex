@@ -1,0 +1,390 @@
+\hypertarget{structvideo__params__s}{\section{video\-\_\-params\-\_\-s \-Struct \-Reference}
+\label{structvideo__params__s}\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}}
+}
+
+
+\-This structure stores the video device parameters that are used for streaming video frames with \-V4\-L2.  
+
+
+
+
+{\ttfamily \#include $<$cacatalk.\-h$>$}
+
+
+
+\-Collaboration diagram for video\-\_\-params\-\_\-s\-:
+\subsection*{\-Public \-Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{structvideo__params__s_a244777435afe8e2ffd40d1919e47abcb}{is\-\_\-ok}
+\begin{DoxyCompactList}\small\item\em 1\-: \-Indicates when the video device is setup correctly. 0\-: is not okay \end{DoxyCompactList}\item 
+int \hyperlink{structvideo__params__s_a09a2674567a028e8984acac16ccc8a8f}{is\-\_\-on}
+\begin{DoxyCompactList}\small\item\em 1\-: \-Indicates when the video device is streaming. 0\-: the video is not streaming. -\/1\-: status is undefined \end{DoxyCompactList}\item 
+char \hyperlink{structvideo__params__s_a7c8bdb370066b647e33e0a84bbca5911}{dev\-\_\-name} \mbox{[}\-M\-A\-X\-P\-A\-T\-H\-L\-E\-N\mbox{]}
+\begin{DoxyCompactList}\small\item\em the path to the video device name \end{DoxyCompactList}\item 
+int \hyperlink{structvideo__params__s_a8da7922c30e29e54fa97380d1c957a18}{img\-\_\-width}
+\begin{DoxyCompactList}\small\item\em \-Video frame width. \end{DoxyCompactList}\item 
+int \hyperlink{structvideo__params__s_aff04696ffc57cb0ae2676fe9e3ffe354}{img\-\_\-height}
+\begin{DoxyCompactList}\small\item\em \-Video frame heigth. \end{DoxyCompactList}\item 
+int \hyperlink{structvideo__params__s_a5ad62fa189f34607d1dbb4e693a81cfd}{v4l\-\_\-fd}
+\begin{DoxyCompactList}\small\item\em file despcriptor for the open video device \end{DoxyCompactList}\item 
+struct v4l2\-\_\-format \hyperlink{structvideo__params__s_a10f56a8af702f24871d7dff8745380fe}{fmt}
+\begin{DoxyCompactList}\small\item\em v4l stream data format \end{DoxyCompactList}\item 
+struct v4l2\-\_\-buffer \hyperlink{structvideo__params__s_ac6db9e27abcbbf76acd19e7eb0b946b2}{buf}
+\begin{DoxyCompactList}\small\item\em video buffer info \end{DoxyCompactList}\item 
+struct v4l2\-\_\-requestbuffers \hyperlink{structvideo__params__s_a2688c600ca2c6aa4cd2e87cca2fa7909}{req}
+\begin{DoxyCompactList}\small\item\em v4l memory mapping buffers (cacatalk uses a double buffer) \end{DoxyCompactList}\item 
+unsigned int \hyperlink{structvideo__params__s_a61f9d75862499eb015a76c40c58abbd3}{number\-\_\-of\-\_\-buffers}
+\begin{DoxyCompactList}\small\item\em \-The number of memory mapping buffers. \end{DoxyCompactList}\item 
+struct \hyperlink{structbuffer}{buffer} $\ast$ \hyperlink{structvideo__params__s_af22e9e81ce6b788b4357d70f43dc1260}{buffers}
+\begin{DoxyCompactList}\small\item\em array of memory buffer structure for video \end{DoxyCompactList}\item 
+enum v4l2\-\_\-buf\-\_\-type \hyperlink{structvideo__params__s_a0bf1de534c89c2e3fd2c0785cd3684c0}{type}
+\begin{DoxyCompactList}\small\item\em \-Indicates the type of buffering (e.\-g. \-V4\-L2\-\_\-\-B\-U\-F\-\_\-\-T\-Y\-P\-E\-\_\-\-V\-I\-D\-E\-O\-\_\-\-C\-A\-P\-T\-U\-R\-E) \end{DoxyCompactList}\item 
+enum v4l2\-\_\-memory \hyperlink{structvideo__params__s_ac54e2e0bd136b84eff239a49a8b11afa}{memory}
+\begin{DoxyCompactList}\small\item\em \-Indicates the type of memory for v4l stream (e.\-g. \-V4\-L2\-\_\-\-M\-E\-M\-O\-R\-Y\-\_\-\-M\-M\-A\-P) \end{DoxyCompactList}\item 
+char $\ast$ \hyperlink{structvideo__params__s_ab7b86e346f34ccf37397dfd3e6a21128}{caca\-\_\-format}
+\begin{DoxyCompactList}\small\item\em preferred libcaca format (e.\-g. \char`\"{}ansi\char`\"{}) to export video (for transmission) \end{DoxyCompactList}\item 
+char $\ast$ \hyperlink{structvideo__params__s_ac064547d5eda8f8516a88922ca28ae5c}{caca\-\_\-dither}
+\begin{DoxyCompactList}\small\item\em \-Indicates the algorithm to be used for dithering with libcaca. \end{DoxyCompactList}\item 
+float \hyperlink{structvideo__params__s_a041f29eefbb3860f3b56eb94d96a8f94}{caca\-\_\-gamma}
+\begin{DoxyCompactList}\small\item\em \-Gamma value (unset\-: to be implemented in the future) \end{DoxyCompactList}\item 
+float \hyperlink{structvideo__params__s_ab2e01e01864e7fb07fdc3ec727edf8ab}{caca\-\_\-brightness}
+\begin{DoxyCompactList}\small\item\em \-Brightness (unset\-: to be implemented in the future) \end{DoxyCompactList}\item 
+float \hyperlink{structvideo__params__s_aa080edd1e1614a24f4496118ae33bfbc}{caca\-\_\-contrast}
+\begin{DoxyCompactList}\small\item\em \-Contrast (unset\-: to be implemented in the future) \end{DoxyCompactList}\item 
+float \hyperlink{structvideo__params__s_a1b7019b0aa1838ed55f41cd299cd7fb3}{aspect\-\_\-ratio}
+\begin{DoxyCompactList}\small\item\em \-Aspect ratio based to fit video in given number of columns in caca\-\_\-canvas. \end{DoxyCompactList}\item 
+unsigned int \hyperlink{structvideo__params__s_aec78c2ac6a99bfb627d77fe7c533541d}{cv\-\_\-rows}
+\begin{DoxyCompactList}\small\item\em \-Number of rows to resolve video on caca \-\_\-anvas. \end{DoxyCompactList}\item 
+unsigned int \hyperlink{structvideo__params__s_aa3f695f161a6cc97cdbfbcc7405323ec}{cv\-\_\-cols}
+\begin{DoxyCompactList}\small\item\em \-Number of columns to resolve video on caca \-\_\-anvas. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{\-Detailed \-Description}
+\-This structure stores the video device parameters that are used for streaming video frames with \-V4\-L2. 
+
+\-Definition at line 117 of file cacatalk.\-h.
+
+
+
+\subsection{\-Member \-Data \-Documentation}
+\hypertarget{structvideo__params__s_a1b7019b0aa1838ed55f41cd299cd7fb3}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!aspect\-\_\-ratio@{aspect\-\_\-ratio}}
+\index{aspect\-\_\-ratio@{aspect\-\_\-ratio}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{aspect\-\_\-ratio}]{\setlength{\rightskip}{0pt plus 5cm}float {\bf video\-\_\-params\-\_\-s\-::aspect\-\_\-ratio}}}\label{structvideo__params__s_a1b7019b0aa1838ed55f41cd299cd7fb3}
+
+
+\-Aspect ratio based to fit video in given number of columns in caca\-\_\-canvas. 
+
+
+
+\-Definition at line 137 of file cacatalk.\-h.
+
+
+
+\-Referenced by set\-\_\-video().
+
+\hypertarget{structvideo__params__s_ac6db9e27abcbbf76acd19e7eb0b946b2}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!buf@{buf}}
+\index{buf@{buf}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{buf}]{\setlength{\rightskip}{0pt plus 5cm}struct v4l2\-\_\-buffer {\bf video\-\_\-params\-\_\-s\-::buf}}}\label{structvideo__params__s_ac6db9e27abcbbf76acd19e7eb0b946b2}
+
+
+video buffer info 
+
+
+
+\-Definition at line 126 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_af22e9e81ce6b788b4357d70f43dc1260}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!buffers@{buffers}}
+\index{buffers@{buffers}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{buffers}]{\setlength{\rightskip}{0pt plus 5cm}struct {\bf buffer}$\ast$ {\bf video\-\_\-params\-\_\-s\-::buffers}}}\label{structvideo__params__s_af22e9e81ce6b788b4357d70f43dc1260}
+
+
+array of memory buffer structure for video 
+
+
+
+\-Definition at line 129 of file cacatalk.\-h.
+
+
+
+\-Referenced by close\-\_\-video\-\_\-stream(), send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_ab2e01e01864e7fb07fdc3ec727edf8ab}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!caca\-\_\-brightness@{caca\-\_\-brightness}}
+\index{caca\-\_\-brightness@{caca\-\_\-brightness}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{caca\-\_\-brightness}]{\setlength{\rightskip}{0pt plus 5cm}float {\bf video\-\_\-params\-\_\-s\-::caca\-\_\-brightness}}}\label{structvideo__params__s_ab2e01e01864e7fb07fdc3ec727edf8ab}
+
+
+\-Brightness (unset\-: to be implemented in the future) 
+
+
+
+\-Definition at line 135 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_aa080edd1e1614a24f4496118ae33bfbc}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!caca\-\_\-contrast@{caca\-\_\-contrast}}
+\index{caca\-\_\-contrast@{caca\-\_\-contrast}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{caca\-\_\-contrast}]{\setlength{\rightskip}{0pt plus 5cm}float {\bf video\-\_\-params\-\_\-s\-::caca\-\_\-contrast}}}\label{structvideo__params__s_aa080edd1e1614a24f4496118ae33bfbc}
+
+
+\-Contrast (unset\-: to be implemented in the future) 
+
+
+
+\-Definition at line 136 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_ac064547d5eda8f8516a88922ca28ae5c}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!caca\-\_\-dither@{caca\-\_\-dither}}
+\index{caca\-\_\-dither@{caca\-\_\-dither}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{caca\-\_\-dither}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf video\-\_\-params\-\_\-s\-::caca\-\_\-dither}}}\label{structvideo__params__s_ac064547d5eda8f8516a88922ca28ae5c}
+
+
+\-Indicates the algorithm to be used for dithering with libcaca. 
+
+
+
+\-Definition at line 133 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_ab7b86e346f34ccf37397dfd3e6a21128}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!caca\-\_\-format@{caca\-\_\-format}}
+\index{caca\-\_\-format@{caca\-\_\-format}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{caca\-\_\-format}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf video\-\_\-params\-\_\-s\-::caca\-\_\-format}}}\label{structvideo__params__s_ab7b86e346f34ccf37397dfd3e6a21128}
+
+
+preferred libcaca format (e.\-g. \char`\"{}ansi\char`\"{}) to export video (for transmission) 
+
+
+
+\-Definition at line 132 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a041f29eefbb3860f3b56eb94d96a8f94}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!caca\-\_\-gamma@{caca\-\_\-gamma}}
+\index{caca\-\_\-gamma@{caca\-\_\-gamma}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{caca\-\_\-gamma}]{\setlength{\rightskip}{0pt plus 5cm}float {\bf video\-\_\-params\-\_\-s\-::caca\-\_\-gamma}}}\label{structvideo__params__s_a041f29eefbb3860f3b56eb94d96a8f94}
+
+
+\-Gamma value (unset\-: to be implemented in the future) 
+
+
+
+\-Definition at line 134 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_aa3f695f161a6cc97cdbfbcc7405323ec}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!cv\-\_\-cols@{cv\-\_\-cols}}
+\index{cv\-\_\-cols@{cv\-\_\-cols}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{cv\-\_\-cols}]{\setlength{\rightskip}{0pt plus 5cm}unsigned int {\bf video\-\_\-params\-\_\-s\-::cv\-\_\-cols}}}\label{structvideo__params__s_aa3f695f161a6cc97cdbfbcc7405323ec}
+
+
+\-Number of columns to resolve video on caca \-\_\-anvas. 
+
+
+
+\-Definition at line 139 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_aec78c2ac6a99bfb627d77fe7c533541d}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!cv\-\_\-rows@{cv\-\_\-rows}}
+\index{cv\-\_\-rows@{cv\-\_\-rows}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{cv\-\_\-rows}]{\setlength{\rightskip}{0pt plus 5cm}unsigned int {\bf video\-\_\-params\-\_\-s\-::cv\-\_\-rows}}}\label{structvideo__params__s_aec78c2ac6a99bfb627d77fe7c533541d}
+
+
+\-Number of rows to resolve video on caca \-\_\-anvas. 
+
+
+
+\-Definition at line 138 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a7c8bdb370066b647e33e0a84bbca5911}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!dev\-\_\-name@{dev\-\_\-name}}
+\index{dev\-\_\-name@{dev\-\_\-name}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{dev\-\_\-name}]{\setlength{\rightskip}{0pt plus 5cm}char {\bf video\-\_\-params\-\_\-s\-::dev\-\_\-name}\mbox{[}\-M\-A\-X\-P\-A\-T\-H\-L\-E\-N\mbox{]}}}\label{structvideo__params__s_a7c8bdb370066b647e33e0a84bbca5911}
+
+
+the path to the video device name 
+
+
+
+\-Definition at line 121 of file cacatalk.\-h.
+
+
+
+\-Referenced by set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a10f56a8af702f24871d7dff8745380fe}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!fmt@{fmt}}
+\index{fmt@{fmt}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{fmt}]{\setlength{\rightskip}{0pt plus 5cm}struct v4l2\-\_\-format {\bf video\-\_\-params\-\_\-s\-::fmt}}}\label{structvideo__params__s_a10f56a8af702f24871d7dff8745380fe}
+
+
+v4l stream data format 
+
+
+
+\-Definition at line 125 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_aff04696ffc57cb0ae2676fe9e3ffe354}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!img\-\_\-height@{img\-\_\-height}}
+\index{img\-\_\-height@{img\-\_\-height}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{img\-\_\-height}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf video\-\_\-params\-\_\-s\-::img\-\_\-height}}}\label{structvideo__params__s_aff04696ffc57cb0ae2676fe9e3ffe354}
+
+
+\-Video frame heigth. 
+
+
+
+\-Definition at line 123 of file cacatalk.\-h.
+
+
+
+\-Referenced by set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a8da7922c30e29e54fa97380d1c957a18}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!img\-\_\-width@{img\-\_\-width}}
+\index{img\-\_\-width@{img\-\_\-width}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{img\-\_\-width}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf video\-\_\-params\-\_\-s\-::img\-\_\-width}}}\label{structvideo__params__s_a8da7922c30e29e54fa97380d1c957a18}
+
+
+\-Video frame width. 
+
+
+
+\-Definition at line 122 of file cacatalk.\-h.
+
+
+
+\-Referenced by set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a244777435afe8e2ffd40d1919e47abcb}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!is\-\_\-ok@{is\-\_\-ok}}
+\index{is\-\_\-ok@{is\-\_\-ok}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{is\-\_\-ok}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf video\-\_\-params\-\_\-s\-::is\-\_\-ok}}}\label{structvideo__params__s_a244777435afe8e2ffd40d1919e47abcb}
+
+
+1\-: \-Indicates when the video device is setup correctly. 0\-: is not okay 
+
+
+
+\-Definition at line 119 of file cacatalk.\-h.
+
+
+
+\-Referenced by change\-\_\-video\-\_\-device(), chat(), display\-\_\-menu(), send\-\_\-video\-\_\-thread(), set\-\_\-video(), turn\-\_\-video\-\_\-stream\-\_\-off(), and turn\-\_\-video\-\_\-stream\-\_\-on().
+
+\hypertarget{structvideo__params__s_a09a2674567a028e8984acac16ccc8a8f}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!is\-\_\-on@{is\-\_\-on}}
+\index{is\-\_\-on@{is\-\_\-on}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{is\-\_\-on}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf video\-\_\-params\-\_\-s\-::is\-\_\-on}}}\label{structvideo__params__s_a09a2674567a028e8984acac16ccc8a8f}
+
+
+1\-: \-Indicates when the video device is streaming. 0\-: the video is not streaming. -\/1\-: status is undefined 
+
+
+
+\-Definition at line 120 of file cacatalk.\-h.
+
+
+
+\-Referenced by chat(), send\-\_\-video\-\_\-thread(), set\-\_\-video(), turn\-\_\-video\-\_\-stream\-\_\-off(), and turn\-\_\-video\-\_\-stream\-\_\-on().
+
+\hypertarget{structvideo__params__s_ac54e2e0bd136b84eff239a49a8b11afa}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!memory@{memory}}
+\index{memory@{memory}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{memory}]{\setlength{\rightskip}{0pt plus 5cm}enum v4l2\-\_\-memory {\bf video\-\_\-params\-\_\-s\-::memory}}}\label{structvideo__params__s_ac54e2e0bd136b84eff239a49a8b11afa}
+
+
+\-Indicates the type of memory for v4l stream (e.\-g. \-V4\-L2\-\_\-\-M\-E\-M\-O\-R\-Y\-\_\-\-M\-M\-A\-P) 
+
+
+
+\-Definition at line 131 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a61f9d75862499eb015a76c40c58abbd3}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!number\-\_\-of\-\_\-buffers@{number\-\_\-of\-\_\-buffers}}
+\index{number\-\_\-of\-\_\-buffers@{number\-\_\-of\-\_\-buffers}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{number\-\_\-of\-\_\-buffers}]{\setlength{\rightskip}{0pt plus 5cm}unsigned int {\bf video\-\_\-params\-\_\-s\-::number\-\_\-of\-\_\-buffers}}}\label{structvideo__params__s_a61f9d75862499eb015a76c40c58abbd3}
+
+
+\-The number of memory mapping buffers. 
+
+
+
+\-Definition at line 128 of file cacatalk.\-h.
+
+
+
+\-Referenced by close\-\_\-video\-\_\-stream(), and set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a2688c600ca2c6aa4cd2e87cca2fa7909}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!req@{req}}
+\index{req@{req}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{req}]{\setlength{\rightskip}{0pt plus 5cm}struct v4l2\-\_\-requestbuffers {\bf video\-\_\-params\-\_\-s\-::req}}}\label{structvideo__params__s_a2688c600ca2c6aa4cd2e87cca2fa7909}
+
+
+v4l memory mapping buffers (cacatalk uses a double buffer) 
+
+
+
+\-Definition at line 127 of file cacatalk.\-h.
+
+
+
+\-Referenced by set\-\_\-video().
+
+\hypertarget{structvideo__params__s_a0bf1de534c89c2e3fd2c0785cd3684c0}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!type@{type}}
+\index{type@{type}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{type}]{\setlength{\rightskip}{0pt plus 5cm}enum v4l2\-\_\-buf\-\_\-type {\bf video\-\_\-params\-\_\-s\-::type}}}\label{structvideo__params__s_a0bf1de534c89c2e3fd2c0785cd3684c0}
+
+
+\-Indicates the type of buffering (e.\-g. \-V4\-L2\-\_\-\-B\-U\-F\-\_\-\-T\-Y\-P\-E\-\_\-\-V\-I\-D\-E\-O\-\_\-\-C\-A\-P\-T\-U\-R\-E) 
+
+
+
+\-Definition at line 130 of file cacatalk.\-h.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), set\-\_\-video(), turn\-\_\-video\-\_\-stream\-\_\-off(), and turn\-\_\-video\-\_\-stream\-\_\-on().
+
+\hypertarget{structvideo__params__s_a5ad62fa189f34607d1dbb4e693a81cfd}{\index{video\-\_\-params\-\_\-s@{video\-\_\-params\-\_\-s}!v4l\-\_\-fd@{v4l\-\_\-fd}}
+\index{v4l\-\_\-fd@{v4l\-\_\-fd}!video_params_s@{video\-\_\-params\-\_\-s}}
+\subsubsection[{v4l\-\_\-fd}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf video\-\_\-params\-\_\-s\-::v4l\-\_\-fd}}}\label{structvideo__params__s_a5ad62fa189f34607d1dbb4e693a81cfd}
+
+
+file despcriptor for the open video device 
+
+
+
+\-Definition at line 124 of file cacatalk.\-h.
+
+
+
+\-Referenced by close\-\_\-video\-\_\-stream(), send\-\_\-video\-\_\-thread(), set\-\_\-video(), turn\-\_\-video\-\_\-stream\-\_\-off(), and turn\-\_\-video\-\_\-stream\-\_\-on().
+
+
+
+\-The documentation for this struct was generated from the following file\-:\begin{DoxyCompactItemize}
+\item 
+include/\hyperlink{cacatalk_8h}{cacatalk.\-h}\end{DoxyCompactItemize}

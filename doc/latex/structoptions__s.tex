@@ -1,0 +1,115 @@
+\hypertarget{structoptions__s}{\section{options\-\_\-s \-Struct \-Reference}
+\label{structoptions__s}\index{options\-\_\-s@{options\-\_\-s}}
+}
+
+
+\-This structure stores the argument options needed across the program. \-It will be called from a few different places if modification/setting of an member argument is needed.  
+
+
+
+
+{\ttfamily \#include $<$cacatalk.\-h$>$}
+
+\subsection*{\-Public \-Attributes}
+\begin{DoxyCompactItemize}
+\item 
+char \hyperlink{structoptions__s_a361e705ec36167283f446c42276b0daf}{video\-\_\-device\-\_\-name} \mbox{[}\hyperlink{cacatalk_8h_a6b20d41d6252e9871430c242cb1a56e7}{\-B\-U\-F\-F\-E\-R\-\_\-\-S\-I\-Z\-E}\mbox{]}
+\begin{DoxyCompactList}\small\item\em \-The video device name. \end{DoxyCompactList}\item 
+char \hyperlink{structoptions__s_a3bc5783f374ad410635b68a77c26e76d}{peer\-\_\-name} \mbox{[}\-M\-A\-X\-H\-O\-S\-T\-N\-A\-M\-E\-L\-E\-N\mbox{]}
+\begin{DoxyCompactList}\small\item\em \-The \-I\-P address or hostname of the peer to connect to. \end{DoxyCompactList}\item 
+char \hyperlink{structoptions__s_a6eae09fe8cfc8e82b1f9b683f4f3e982}{host\-\_\-\-I\-Pv4} \mbox{[}\-M\-A\-X\-H\-O\-S\-T\-N\-A\-M\-E\-L\-E\-N\mbox{]}
+\begin{DoxyCompactList}\small\item\em \-The \-I\-P address for the local host. \end{DoxyCompactList}\item 
+const char $\ast$ \hyperlink{structoptions__s_a74d98a4b0f31c22e05993a1bdef76afc}{driver\-\_\-options} \mbox{[}7\mbox{]}
+\begin{DoxyCompactList}\small\item\em \-A list of strings for caca display driver options. \end{DoxyCompactList}\item 
+unsigned int \hyperlink{structoptions__s_a23c963605bc84d66eedd18089502d8e4}{driver\-\_\-choice}
+\begin{DoxyCompactList}\small\item\em \-To choose an index from the array of drivers options. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{\-Detailed \-Description}
+\-This structure stores the argument options needed across the program. \-It will be called from a few different places if modification/setting of an member argument is needed. 
+
+\-Definition at line 105 of file cacatalk.\-h.
+
+
+
+\subsection{\-Member \-Data \-Documentation}
+\hypertarget{structoptions__s_a23c963605bc84d66eedd18089502d8e4}{\index{options\-\_\-s@{options\-\_\-s}!driver\-\_\-choice@{driver\-\_\-choice}}
+\index{driver\-\_\-choice@{driver\-\_\-choice}!options_s@{options\-\_\-s}}
+\subsubsection[{driver\-\_\-choice}]{\setlength{\rightskip}{0pt plus 5cm}unsigned int {\bf options\-\_\-s\-::driver\-\_\-choice}}}\label{structoptions__s_a23c963605bc84d66eedd18089502d8e4}
+
+
+\-To choose an index from the array of drivers options. 
+
+
+
+\-Definition at line 111 of file cacatalk.\-h.
+
+
+
+\-Referenced by get\-\_\-options(), and main().
+
+\hypertarget{structoptions__s_a74d98a4b0f31c22e05993a1bdef76afc}{\index{options\-\_\-s@{options\-\_\-s}!driver\-\_\-options@{driver\-\_\-options}}
+\index{driver\-\_\-options@{driver\-\_\-options}!options_s@{options\-\_\-s}}
+\subsubsection[{driver\-\_\-options}]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ {\bf options\-\_\-s\-::driver\-\_\-options}\mbox{[}7\mbox{]}}}\label{structoptions__s_a74d98a4b0f31c22e05993a1bdef76afc}
+
+
+\-A list of strings for caca display driver options. 
+
+
+
+\-Definition at line 110 of file cacatalk.\-h.
+
+
+
+\-Referenced by get\-\_\-options(), and main().
+
+\hypertarget{structoptions__s_a6eae09fe8cfc8e82b1f9b683f4f3e982}{\index{options\-\_\-s@{options\-\_\-s}!host\-\_\-\-I\-Pv4@{host\-\_\-\-I\-Pv4}}
+\index{host\-\_\-\-I\-Pv4@{host\-\_\-\-I\-Pv4}!options_s@{options\-\_\-s}}
+\subsubsection[{host\-\_\-\-I\-Pv4}]{\setlength{\rightskip}{0pt plus 5cm}char {\bf options\-\_\-s\-::host\-\_\-\-I\-Pv4}\mbox{[}\-M\-A\-X\-H\-O\-S\-T\-N\-A\-M\-E\-L\-E\-N\mbox{]}}}\label{structoptions__s_a6eae09fe8cfc8e82b1f9b683f4f3e982}
+
+
+\-The \-I\-P address for the local host. 
+
+
+
+\-Definition at line 109 of file cacatalk.\-h.
+
+
+
+\-Referenced by display\-\_\-menu(), and get\-\_\-options().
+
+\hypertarget{structoptions__s_a3bc5783f374ad410635b68a77c26e76d}{\index{options\-\_\-s@{options\-\_\-s}!peer\-\_\-name@{peer\-\_\-name}}
+\index{peer\-\_\-name@{peer\-\_\-name}!options_s@{options\-\_\-s}}
+\subsubsection[{peer\-\_\-name}]{\setlength{\rightskip}{0pt plus 5cm}char {\bf options\-\_\-s\-::peer\-\_\-name}\mbox{[}\-M\-A\-X\-H\-O\-S\-T\-N\-A\-M\-E\-L\-E\-N\mbox{]}}}\label{structoptions__s_a3bc5783f374ad410635b68a77c26e76d}
+
+
+\-The \-I\-P address or hostname of the peer to connect to. 
+
+
+
+\-Definition at line 108 of file cacatalk.\-h.
+
+
+
+\-Referenced by display\-\_\-menu(), get\-\_\-options(), main(), and set\-\_\-peer\-\_\-address().
+
+\hypertarget{structoptions__s_a361e705ec36167283f446c42276b0daf}{\index{options\-\_\-s@{options\-\_\-s}!video\-\_\-device\-\_\-name@{video\-\_\-device\-\_\-name}}
+\index{video\-\_\-device\-\_\-name@{video\-\_\-device\-\_\-name}!options_s@{options\-\_\-s}}
+\subsubsection[{video\-\_\-device\-\_\-name}]{\setlength{\rightskip}{0pt plus 5cm}char {\bf options\-\_\-s\-::video\-\_\-device\-\_\-name}\mbox{[}{\bf \-B\-U\-F\-F\-E\-R\-\_\-\-S\-I\-Z\-E}\mbox{]}}}\label{structoptions__s_a361e705ec36167283f446c42276b0daf}
+
+
+\-The video device name. 
+
+
+
+\-Definition at line 107 of file cacatalk.\-h.
+
+
+
+\-Referenced by change\-\_\-video\-\_\-device(), display\-\_\-menu(), get\-\_\-options(), and main().
+
+
+
+\-The documentation for this struct was generated from the following file\-:\begin{DoxyCompactItemize}
+\item 
+include/\hyperlink{cacatalk_8h}{cacatalk.\-h}\end{DoxyCompactItemize}

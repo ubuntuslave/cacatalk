@@ -1,0 +1,12 @@
+digraph G
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="video_out_args_s",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" vid_params" ];
+  Node2 [label="video_params_s",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structvideo__params__s.html",tooltip="This structure stores the video device parameters that are used for streaming video frames with V4L2..."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" buffers" ];
+  Node3 [label="buffer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structbuffer.html",tooltip="A buffer place holder to be used with video streaming buffers given by the v4l device."];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" win" ];
+  Node4 [label="_window",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$struct__window.html",tooltip="A Window structure encapsulates the dimensions of the window and the amount by which the text within ..."];
+}

@@ -1,0 +1,363 @@
+.TH "src/cacatalk.c" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/cacatalk.c \- 
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <stdio\&.h>\fP
+.br
+\fC#include <stdlib\&.h>\fP
+.br
+\fC#include <string\&.h>\fP
+.br
+\fC#include <fcntl\&.h>\fP
+.br
+\fC#include <errno\&.h>\fP
+.br
+\fC#include <sys/ioctl\&.h>\fP
+.br
+\fC#include <sys/types\&.h>\fP
+.br
+\fC#include <sys/time\&.h>\fP
+.br
+\fC#include <sys/mman\&.h>\fP
+.br
+\fC#include <sys/select\&.h>\fP
+.br
+\fC#include 'cacatalk\&.h'\fP
+.br
+\fC#include 'common_image\&.h'\fP
+.br
+\fC#include 'caca_socket\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, char **argv)"
+.br
+.ti -1c
+.RI "void \fBdisplay_menu\fP (caca_canvas_t *cv, \fBoptions\fP *arg_opts)"
+.br
+.RI "\fIIt draws the main menu indicating posible options tied to keyboard commands\&. \fP"
+.ti -1c
+.RI "int \fBchat\fP (caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, \fBWindow\fP *win, char *peer_hostname)"
+.br
+.RI "\fIThis is the main chatroom environment where text data is sent/received via a single text socket, and video is received using another socket\&. \fP"
+.ti -1c
+.RI "int \fBset_video\fP (\fBvideo_params\fP *vid_params, char *dev_name, \fBWindow\fP *win, int img_width, int img_height)"
+.br
+.RI "\fISets the video device using the V4L2 driver\&. \fP"
+.ti -1c
+.RI "void \fBset_peer_address\fP (caca_canvas_t *cv, caca_display_t *dp, \fBoptions\fP *opts)"
+.br
+.RI "\fISets an IP address or hostname to the peer to establish connection with\&. \fP"
+.ti -1c
+.RI "void \fBchange_video_device\fP (caca_canvas_t *cv, caca_display_t *dp, \fBoptions\fP *opts, \fBvideo_params\fP *vid_params, \fBWindow\fP *win, int img_width, int img_height)"
+.br
+.RI "\fIChanges or sets the video device to be used with cacatalk\&. \fP"
+.ti -1c
+.RI "int \fBturn_video_stream_on\fP (\fBvideo_params\fP *vid_params)"
+.br
+.RI "\fIAttempts to turn the video stream on and sets the related indicated flag in the passed structure\&. \fP"
+.ti -1c
+.RI "int \fBturn_video_stream_off\fP (\fBvideo_params\fP *vid_params)"
+.br
+.RI "\fIAttempts to turn the video stream off and sets the related indicated flag in the passed structure\&. \fP"
+.ti -1c
+.RI "void \fBclose_video_stream\fP (\fBvideo_params\fP *vid_params)"
+.br
+.RI "\fIStop streaming video and close V4L video device\&. \fP"
+.ti -1c
+.RI "int \fBxioctl\fP (int fd, int request, void *arg)"
+.br
+.RI "\fIIt persistently calls the v4l2_ioctl() function to program the V4L2 device\&. \fP"
+.ti -1c
+.RI "void \fBset_window\fP (int fd, unsigned short video_lines, \fBWindow\fP *win, caca_canvas_t *cv)"
+.br
+.RI "\fIFills structure with current window dimensions\&. \fP"
+.ti -1c
+.RI "int \fBget_options\fP (int argc, char **argv, \fBoptions\fP *opt)"
+.br
+.RI "\fIParses command-line options and corresponding arguments using the getopt() function found in the unistd library\&. \fP"
+.ti -1c
+.RI "void * \fBsend_video_thread\fP (void *arguments)"
+.br
+.RI "\fIThis thread grabs video frames from the local host video device and send it in the caca format to the connected peer\&. \fP"
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBvideo_out_args\fP \fBg_video_out\fP"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "void \fBchange_video_device\fP (caca_canvas_t *cv, caca_display_t *dp, \fBoptions\fP *opts, \fBvideo_params\fP *vid_params, \fBWindow\fP *win, intimg_width, intimg_height)"
+.PP
+Changes or sets the video device to be used with cacatalk\&. \fBParameters:\fP
+.RS 4
+\fIcv\fP A pointer to the caca canvas 
+.br
+\fIdp\fP A pointer to the caca display 
+.br
+\fIopts\fP The current argument options structure into which the new hostname or IP address will be saved 
+.br
+\fIvid_params\fP A pointer to the parameters structure for the video device to which the request will be made to\&. 
+.br
+\fIwin\fP A pointer to the window parameters structure to be passed as setting video 
+.br
+\fIimg_width\fP The video frame width in pixels 
+.br
+\fIimg_height\fP The video frame heigh in pixels 
+.RE
+.PP
+
+.PP
+Definition at line 1036 of file cacatalk\&.c\&.
+.PP
+References textentry::buffer, BUFFER_SIZE, textentry::changed, textentry::cursor, video_params_s::is_ok, set_video(), textentry::size, and options_s::video_device_name\&.
+.PP
+Referenced by main()\&.
+.SS "int \fBchat\fP (caca_canvas_t *cv, caca_display_t *dp, inttext_fd, intvid_fd, \fBWindow\fP *win, char *peer_hostname)"
+.PP
+This is the main chatroom environment where text data is sent/received via a single text socket, and video is received using another socket\&. Options, such as turning the video stream on/off can be toggled by pressing 'Ctr+V' Every time the user enters a line of text, it will be sent to the peer\&. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIcv\fP A pointer to the caca canvas 
+.br
+\fIdp\fP A pointer to the caca display 
+.br
+\fItext_fd\fP The socket file descriptor for sending/receiving text data 
+.br
+\fIvid_fd\fP The socket file descriptor for receiving video data 
+.br
+\fIwin\fP A pointer to our custom Window element to which information will be assigned 
+.br
+\fIpeer_hostname\fP The realized username of the peer user (However, username is not resolved yet in this version)
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+0 if nothing went wrong\&. This function always return (unless something crashed) 
+.RE
+.PP
+
+.PP
+Definition at line 419 of file cacatalk\&.c\&.
+.PP
+References textentry::buffer, BUFFER_SIZE, _window::caca_format, textentry::changed, textentry::cursor, video_params_s::is_ok, video_params_s::is_on, MAXFD, MAXLINE, textentry::size, TEXT_ENTRIES, turn_video_stream_off(), turn_video_stream_on(), video_out_args_s::vid_params, _window::video_cols, and _window::video_lines\&.
+.PP
+Referenced by main()\&.
+.SS "void \fBclose_video_stream\fP (\fBvideo_params\fP *vid_params)"
+.PP
+Stop streaming video and close V4L video device\&. \fBParameters:\fP
+.RS 4
+\fIa\fP pointer to the parameters structure of the video device 
+.RE
+.PP
+
+.PP
+Definition at line 1235 of file cacatalk\&.c\&.
+.PP
+References video_params_s::buffers, buffer::length, video_params_s::number_of_buffers, buffer::start, turn_video_stream_off(), and video_params_s::v4l_fd\&.
+.PP
+Referenced by main()\&.
+.SS "void \fBdisplay_menu\fP (caca_canvas_t *cv, \fBoptions\fP *arg_opts)"
+.PP
+It draws the main menu indicating posible options tied to keyboard commands\&. \fBParameters:\fP
+.RS 4
+\fIcv\fP A pointer to the caca canvas 
+.br
+\fIarg_opts\fP The current argument options structure 
+.RE
+.PP
+
+.PP
+Definition at line 365 of file cacatalk\&.c\&.
+.PP
+References options_s::host_IPv4, video_params_s::is_ok, options_s::peer_name, video_out_args_s::socketfd, video_out_args_s::vid_params, and options_s::video_device_name\&.
+.PP
+Referenced by main()\&.
+.SS "int \fBget_options\fP (intargc, char **argv, \fBoptions\fP *opt)"
+.PP
+Parses command-line options and corresponding arguments using the getopt() function found in the unistd library\&. \fBParameters:\fP
+.RS 4
+\fIargc\fP The command line argument count 
+.br
+\fIargv\fP The command line arguments list 
+.br
+\fIopt\fP A pointer to the options structure pertaining to corresponding argument values
+.RE
+.PP
+\fBReturn values:\fP
+.RS 4
+\fI0\fP if successfully parsed all options 
+.br
+\fI-1\fP if there was an error parsing options 
+.RE
+.PP
+
+.PP
+Definition at line 1290 of file cacatalk\&.c\&.
+.PP
+References options_s::driver_choice, options_s::driver_options, get_IP_addresses(), options_s::host_IPv4, options_s::peer_name, and options_s::video_device_name\&.
+.PP
+Referenced by main()\&.
+.SS "int \fBmain\fP (intargc, char **argv)"
+.PP
+Definition at line 28 of file cacatalk\&.c\&.
+.PP
+References change_video_device(), chat(), close_video_stream(), connect_to_peer_socket(), display_menu(), options_s::driver_choice, options_s::driver_options, ERROR_EXIT, get_options(), LISTEN_QUEUE_SIZE, NUM_THREADS, options_s::peer_name, PORT_CHAT, PORT_VIDEO, video_out_args_s::quit, send_video_thread(), set_non_block(), set_peer_address(), set_video(), set_window(), SOCKADDR, video_out_args_s::socketfd, turn_video_stream_off(), video_out_args_s::vid_params, options_s::video_device_name, and video_out_args_s::win\&.
+.SS "void* \fBsend_video_thread\fP (void *arguments)"
+.PP
+This thread grabs video frames from the local host video device and send it in the caca format to the connected peer\&. 
+.PP
+Definition at line 1354 of file cacatalk\&.c\&.
+.PP
+References video_params_s::buf, video_params_s::buffers, video_params_s::caca_brightness, video_params_s::caca_contrast, video_params_s::caca_dither, video_params_s::caca_format, video_params_s::caca_gamma, CLEAR, _window::cols, video_params_s::cv_cols, video_params_s::cv_rows, image::dither, video_params_s::fmt, video_params_s::is_ok, video_params_s::is_on, load_image_from_V4L_buffer(), MAXFD, video_params_s::memory, image::pixels, video_out_args_s::quit, _window::rows, video_out_args_s::socketfd, video_params_s::type, unload_image(), video_params_s::v4l_fd, video_out_args_s::vid_params, video_out_args_s::win, and xioctl()\&.
+.PP
+Referenced by main()\&.
+.SS "void \fBset_peer_address\fP (caca_canvas_t *cv, caca_display_t *dp, \fBoptions\fP *opts)"
+.PP
+Sets an IP address or hostname to the peer to establish connection with\&. \fBParameters:\fP
+.RS 4
+\fIcv\fP A pointer to the caca canvas 
+.br
+\fIdp\fP A pointer to the caca display 
+.br
+\fIopts\fP The current argument options structure into which the new hostname or IP address will be saved 
+.RE
+.PP
+
+.PP
+Definition at line 894 of file cacatalk\&.c\&.
+.PP
+References textentry::buffer, BUFFER_SIZE, textentry::changed, textentry::cursor, options_s::peer_name, and textentry::size\&.
+.PP
+Referenced by main()\&.
+.SS "int \fBset_video\fP (\fBvideo_params\fP *vid_params, char *dev_name, \fBWindow\fP *win, intimg_width, intimg_height)"
+.PP
+Sets the video device using the V4L2 driver\&. \fBParameters:\fP
+.RS 4
+\fIvid_params\fP A pointer to the parameters structure for the video device to which the request will be made to\&. 
+.br
+\fIdev_name\fP The path to the video device name (e\&.g\&. /dev/video0) 
+.br
+\fIwin\fP A pointer to the window parameters structure to be passed as setting video 
+.br
+\fIimg_width\fP The video frame width in pixels 
+.br
+\fIimg_height\fP The video frame heigh in pixels
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+the video device file descriptor (greater than -1 if video was set/open successfully) 
+.RE
+.PP
+
+.PP
+Definition at line 791 of file cacatalk\&.c\&.
+.PP
+References video_params_s::aspect_ratio, video_params_s::buf, video_params_s::buffers, video_params_s::caca_brightness, video_params_s::caca_contrast, video_params_s::caca_dither, _window::caca_format, video_params_s::caca_format, video_params_s::caca_gamma, CLEAR, video_params_s::cv_cols, video_params_s::cv_rows, video_params_s::dev_name, video_params_s::fmt, video_params_s::img_height, video_params_s::img_width, video_params_s::is_ok, video_params_s::is_on, buffer::length, video_params_s::memory, video_params_s::number_of_buffers, video_params_s::req, buffer::start, turn_video_stream_on(), video_params_s::type, video_params_s::v4l_fd, _window::video_lines, and xioctl()\&.
+.PP
+Referenced by change_video_device(), and main()\&.
+.SS "void \fBset_window\fP (intfd, unsigned shortvideo_lines, \fBWindow\fP *win, caca_canvas_t *cv)"
+.PP
+Fills structure with current window dimensions\&. \fBParameters:\fP
+.RS 4
+\fIfd\fP A file descriptor number related to the terminal (usually STDIN_FILENO) 
+.br
+\fIvideo_lines\fP The number of rows (lines) used for the video area on the canvas 
+.br
+\fIwin\fP A pointer to our custom Window element to which information will be assigned 
+.br
+\fIcv\fP A pointer to the caca canvas for which we will identify dimensions of\&. 
+.RE
+.PP
+
+.PP
+Definition at line 1268 of file cacatalk\&.c\&.
+.PP
+References _window::caca_format, _window::cols, _window::rows, _window::video_cols, and _window::video_lines\&.
+.PP
+Referenced by main()\&.
+.SS "int \fBturn_video_stream_off\fP (\fBvideo_params\fP *vid_params)"
+.PP
+Attempts to turn the video stream off and sets the related indicated flag in the passed structure\&. \fBParameters:\fP
+.RS 4
+\fIvid_params\fP A pointer to the parameters structure for the video device to which the request will be made to\&.
+.RE
+.PP
+\fBReturn values:\fP
+.RS 4
+\fI0\fP if the turning off streaming request was set successfully 
+.br
+\fI-1\fP if the streaming request did not succeed\&. 
+.RE
+.PP
+
+.PP
+Definition at line 1221 of file cacatalk\&.c\&.
+.PP
+References video_params_s::is_ok, video_params_s::is_on, video_params_s::type, video_params_s::v4l_fd, and xioctl()\&.
+.PP
+Referenced by chat(), close_video_stream(), and main()\&.
+.SS "int \fBturn_video_stream_on\fP (\fBvideo_params\fP *vid_params)"
+.PP
+Attempts to turn the video stream on and sets the related indicated flag in the passed structure\&. \fBParameters:\fP
+.RS 4
+\fIvid_params\fP A pointer to the parameters structure for the video device to which the request will be made to\&.
+.RE
+.PP
+\fBReturn values:\fP
+.RS 4
+\fI1\fP if the streaming request was set successfully 
+.br
+\fI0\fP if the streaming request did not succeed, so the stream is off\&. 
+.RE
+.PP
+
+.PP
+Definition at line 1207 of file cacatalk\&.c\&.
+.PP
+References video_params_s::is_ok, video_params_s::is_on, video_params_s::type, video_params_s::v4l_fd, and xioctl()\&.
+.PP
+Referenced by chat(), and set_video()\&.
+.SS "int \fBxioctl\fP (intfd, intrequest, void *arg)"
+.PP
+It persistently calls the v4l2_ioctl() function to program the V4L2 device\&. \fBParameters:\fP
+.RS 4
+\fIfd\fP An open file descriptor\&. 
+.br
+\fIrequest\fP The encoded request indicating how to program the device (e\&.g\&. VIDIOC_STREAMON, VIDIOC_S_FMT, etc\&.) Macros and defines specifying V4L2 ioctl requests are located in the videodev2\&.h header file 
+.br
+\fIarg\fP The appropriate arguments (or pointer to a struct, e\&.g\&. v4l2_requestbuffers) related to the request at hand\&.
+.RE
+.PP
+\fBReturn values:\fP
+.RS 4
+\fI0\fP request set successfully 
+.br
+\fI-1\fP on error\&. Also, the errno variable is set appropriately 
+.RE
+.PP
+
+.PP
+Definition at line 1249 of file cacatalk\&.c\&.
+.PP
+Referenced by send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
+.SH "Variable Documentation"
+.PP 
+.SS "\fBvideo_out_args\fP \fBg_video_out\fP"
+.PP
+Definition at line 26 of file cacatalk\&.c\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

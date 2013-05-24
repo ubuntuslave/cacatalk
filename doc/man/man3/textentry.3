@@ -1,0 +1,72 @@
+.TH "textentry" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+textentry \- 
+.PP
+A buffer for text entry as uint32 characters used for putting characters in caca canvas\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <cacatalk\&.h>\fP
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "uint32_t \fBbuffer\fP [\fBBUFFER_SIZE\fP+1]"
+.br
+.RI "\fIThe text buffer\&. \fP"
+.ti -1c
+.RI "unsigned int \fBsize\fP"
+.br
+.RI "\fIThe number of characters in the buffer entry\&. \fP"
+.ti -1c
+.RI "unsigned int \fBcursor\fP"
+.br
+.RI "\fIThe text cursor possition in the entry (relative to the first character) \fP"
+.ti -1c
+.RI "unsigned int \fBchanged\fP"
+.br
+.RI "\fITo indicate that a change to the buffer has been made\&. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+A buffer for text entry as uint32 characters used for putting characters in caca canvas\&. 
+.PP
+Definition at line 76 of file cacatalk\&.h\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "uint32_t \fBtextentry::buffer\fP[\fBBUFFER_SIZE\fP+1]"
+.PP
+The text buffer\&. 
+.PP
+Definition at line 78 of file cacatalk\&.h\&.
+.PP
+Referenced by change_video_device(), chat(), and set_peer_address()\&.
+.SS "unsigned int \fBtextentry::changed\fP"
+.PP
+To indicate that a change to the buffer has been made\&. 
+.PP
+Definition at line 81 of file cacatalk\&.h\&.
+.PP
+Referenced by change_video_device(), chat(), and set_peer_address()\&.
+.SS "unsigned int \fBtextentry::cursor\fP"
+.PP
+The text cursor possition in the entry (relative to the first character) 
+.PP
+Definition at line 80 of file cacatalk\&.h\&.
+.PP
+Referenced by change_video_device(), chat(), and set_peer_address()\&.
+.SS "unsigned int \fBtextentry::size\fP"
+.PP
+The number of characters in the buffer entry\&. 
+.PP
+Definition at line 79 of file cacatalk\&.h\&.
+.PP
+Referenced by change_video_device(), chat(), and set_peer_address()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

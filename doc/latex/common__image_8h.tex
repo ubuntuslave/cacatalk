@@ -1,0 +1,90 @@
+\hypertarget{common__image_8h}{\section{include/common\-\_\-image.h \-File \-Reference}
+\label{common__image_8h}\index{include/common\-\_\-image.\-h@{include/common\-\_\-image.\-h}}
+}
+{\ttfamily \#include $<$linux/videodev2.\-h$>$}\*
+{\ttfamily \#include $<$libv4l2.\-h$>$}\*
+{\ttfamily \#include $<$caca.\-h$>$}\*
+\-Include dependency graph for common\-\_\-image.\-h\-:
+\-This graph shows which files directly or indirectly include this file\-:
+\subsection*{\-Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structbuffer}{buffer}
+\begin{DoxyCompactList}\small\item\em \-A buffer place holder to be used with video streaming buffers given by the v4l device. \end{DoxyCompactList}\item 
+struct \hyperlink{structimage}{image}
+\begin{DoxyCompactList}\small\item\em \-An image object to indicate the corresponding pixels of a video buffer in memory and other parameters, such as widht, height (pixels) and the caca dither format of choice. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{\-Functions}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structimage}{image} $\ast$ \hyperlink{common__image_8h_adf1231faaff08a2dc8ac048216d75b6a}{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer} (struct v4l2\-\_\-format $\ast$fmt, struct \hyperlink{structbuffer}{buffer} $\ast$buf, int bytesused)
+\begin{DoxyCompactList}\small\item\em \-It loads an image from the v4l buffer. \end{DoxyCompactList}\item 
+void \hyperlink{common__image_8h_a8d103606ff956faa80024e63877ec2fb}{unload\-\_\-image} (struct \hyperlink{structimage}{image} $\ast$)
+\begin{DoxyCompactList}\small\item\em \-It unloads the image from the v4l memory buffer. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{\-Function \-Documentation}
+\hypertarget{common__image_8h_adf1231faaff08a2dc8ac048216d75b6a}{\index{common\-\_\-image.\-h@{common\-\_\-image.\-h}!load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer@{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer}}
+\index{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer@{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer}!common_image.h@{common\-\_\-image.\-h}}
+\subsubsection[{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer}]{\setlength{\rightskip}{0pt plus 5cm}struct {\bf image}$\ast$ {\bf load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer} (
+\begin{DoxyParamCaption}
+\item[{struct v4l2\-\_\-format $\ast$}]{fmt, }
+\item[{struct {\bf buffer} $\ast$}]{buf, }
+\item[{int}]{bytesused}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}read\mbox{]}}}}\label{common__image_8h_adf1231faaff08a2dc8ac048216d75b6a}
+
+
+\-It loads an image from the v4l buffer. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em fmt} & \-The v4l2 stream data format \\
+\hline
+{\em buf} & \-The buffer structure to memory location \\
+\hline
+{\em bytesused} & \-The number of bytes used by the buffer\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{\-Returns}
+\-A shared pointer to the bytes allocated by the image structure 
+\end{DoxyReturn}
+
+
+\-Definition at line 20 of file common\-\_\-image.\-c.
+
+
+
+\-References image\-::dither, image\-::h, image\-::pixels, buffer\-::start, and image\-::w.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread().
+
+\hypertarget{common__image_8h_a8d103606ff956faa80024e63877ec2fb}{\index{common\-\_\-image.\-h@{common\-\_\-image.\-h}!unload\-\_\-image@{unload\-\_\-image}}
+\index{unload\-\_\-image@{unload\-\_\-image}!common_image.h@{common\-\_\-image.\-h}}
+\subsubsection[{unload\-\_\-image}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf unload\-\_\-image} (
+\begin{DoxyParamCaption}
+\item[{struct {\bf image} $\ast$}]{}
+\end{DoxyParamCaption}
+)}}\label{common__image_8h_a8d103606ff956faa80024e63877ec2fb}
+
+
+\-It unloads the image from the v4l memory buffer. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em image} & \-The shared pointer to the bytes allocated to the image structure \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 132 of file common\-\_\-image.\-c.
+
+
+
+\-References image\-::dither, and image\-::pixels.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread().
+

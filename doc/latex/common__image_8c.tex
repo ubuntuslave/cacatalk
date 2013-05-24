@@ -1,0 +1,82 @@
+\hypertarget{common__image_8c}{\section{src/common\-\_\-image.c \-File \-Reference}
+\label{common__image_8c}\index{src/common\-\_\-image.\-c@{src/common\-\_\-image.\-c}}
+}
+{\ttfamily \#include $<$string.\-h$>$}\*
+{\ttfamily \#include $<$stdlib.\-h$>$}\*
+{\ttfamily \#include \char`\"{}common\-\_\-image.\-h\char`\"{}}\*
+\-Include dependency graph for common\-\_\-image.\-c\-:
+\subsection*{\-Functions}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structimage}{image} $\ast$ \hyperlink{common__image_8c_adf1231faaff08a2dc8ac048216d75b6a}{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer} (struct v4l2\-\_\-format $\ast$fmt, struct \hyperlink{structbuffer}{buffer} $\ast$buf, int bytesused)
+\begin{DoxyCompactList}\small\item\em \-It loads an image from the v4l buffer. \end{DoxyCompactList}\item 
+void \hyperlink{common__image_8c_af662e66aa73bcb3e403280bc11745dc1}{unload\-\_\-image} (struct \hyperlink{structimage}{image} $\ast$im)
+\begin{DoxyCompactList}\small\item\em \-It unloads the image from the v4l memory buffer. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{\-Function \-Documentation}
+\hypertarget{common__image_8c_adf1231faaff08a2dc8ac048216d75b6a}{\index{common\-\_\-image.\-c@{common\-\_\-image.\-c}!load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer@{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer}}
+\index{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer@{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer}!common_image.c@{common\-\_\-image.\-c}}
+\subsubsection[{load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer}]{\setlength{\rightskip}{0pt plus 5cm}struct {\bf image}$\ast$ {\bf load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer} (
+\begin{DoxyParamCaption}
+\item[{struct v4l2\-\_\-format $\ast$}]{fmt, }
+\item[{struct {\bf buffer} $\ast$}]{buf, }
+\item[{int}]{bytesused}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}read\mbox{]}}}}\label{common__image_8c_adf1231faaff08a2dc8ac048216d75b6a}
+
+
+\-It loads an image from the v4l buffer. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em fmt} & \-The v4l2 stream data format \\
+\hline
+{\em buf} & \-The buffer structure to memory location \\
+\hline
+{\em bytesused} & \-The number of bytes used by the buffer\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{\-Returns}
+\-A shared pointer to the bytes allocated by the image structure 
+\end{DoxyReturn}
+
+
+\-Definition at line 20 of file common\-\_\-image.\-c.
+
+
+
+\-References image\-::dither, image\-::h, image\-::pixels, buffer\-::start, and image\-::w.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread().
+
+\hypertarget{common__image_8c_af662e66aa73bcb3e403280bc11745dc1}{\index{common\-\_\-image.\-c@{common\-\_\-image.\-c}!unload\-\_\-image@{unload\-\_\-image}}
+\index{unload\-\_\-image@{unload\-\_\-image}!common_image.c@{common\-\_\-image.\-c}}
+\subsubsection[{unload\-\_\-image}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf unload\-\_\-image} (
+\begin{DoxyParamCaption}
+\item[{struct {\bf image} $\ast$}]{}
+\end{DoxyParamCaption}
+)}}\label{common__image_8c_af662e66aa73bcb3e403280bc11745dc1}
+
+
+\-It unloads the image from the v4l memory buffer. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em image} & \-The shared pointer to the bytes allocated to the image structure \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 132 of file common\-\_\-image.\-c.
+
+
+
+\-References image\-::dither, and image\-::pixels.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread().
+

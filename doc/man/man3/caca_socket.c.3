@@ -1,0 +1,110 @@
+.TH "src/caca_socket.c" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/caca_socket.c \- 
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <sys/types\&.h>\fP
+.br
+\fC#include <sys/socket\&.h>\fP
+.br
+\fC#include <sys/param\&.h>\fP
+.br
+\fC#include <ifaddrs\&.h>\fP
+.br
+\fC#include <netdb\&.h>\fP
+.br
+\fC#include 'caca_socket\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBget_IP_addresses\fP (char *presentation_addr, int print)"
+.br
+.RI "\fIResolves all the network interfaces and prints addresses to standard output (if desired) In fact, it provides the IPv4 presentation address for the local host\&. \fP"
+.ti -1c
+.RI "int \fBconnect_to_peer_socket\fP (const char *peer_hostname, struct sockaddr_in *server, in_port_t port)"
+.br
+.ti -1c
+.RI "int \fBinet_connect\fP (const char *host, const char *service, int type)"
+.br
+.RI "\fICreate socket and connect it to the address specified by 'host' + 'service'/'type'\&. \fP"
+.ti -1c
+.RI "void \fBset_non_block\fP (int fd)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int \fBconnect_to_peer_socket\fP (const char *peer_hostname, struct sockaddr_in *server, in_port_tport)"TODO: description
+.PP
+\fBParameters:\fP
+.RS 4
+\fIpeer_hostname\fP The IP address or hostname as a human readable character string 
+.br
+\fIserver\fP The socket address structure to be realized based on the connection to the peer_hostname 
+.br
+\fIport\fP The port number to connect to (assumes the other side is listening)
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+socket file descriptor number\&. Or -1 if not connected\&. 
+.RE
+.PP
+
+.PP
+Definition at line 57 of file caca_socket\&.c\&.
+.PP
+References ERROR_EXIT, MAXLINE, SIZE, and SOCKADDR\&.
+.PP
+Referenced by main()\&.
+.SS "void \fBget_IP_addresses\fP (char *presentation_addr, intprint)"
+.PP
+Resolves all the network interfaces and prints addresses to standard output (if desired) In fact, it provides the IPv4 presentation address for the local host\&. \fBParameters:\fP
+.RS 4
+\fIpresentation_addr\fP The presentation address in IPv4 format (dotted decimal) 
+.br
+\fIprint\fP 1: prints all addresses to standard output\&. Or not (0: default) 
+.RE
+.PP
+
+.PP
+Definition at line 19 of file caca_socket\&.c\&.
+.PP
+Referenced by get_options()\&.
+.SS "int \fBinet_connect\fP (const char *host, const char *service, inttype)"
+.PP
+Create socket and connect it to the address specified by 'host' + 'service'/'type'\&. \fBNote:\fP
+.RS 4
+Function based on Michael Kerrisk's source code for his book 'The Linux Programming Interface'
+.RE
+.PP
+\fBParameters:\fP
+.RS 4
+\fIhost\fP NULL for loopback IP address, or a host name or numeric IP address 
+.br
+\fIservice\fP either a name or a port number 
+.br
+\fItype\fP either SOCK_STREAM or SOCK_DGRAM
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+socket descriptor on success, or -1 on error 
+.RE
+.PP
+
+.PP
+Definition at line 109 of file caca_socket\&.c\&.
+.SS "void \fBset_non_block\fP (intfd)"
+.PP
+Definition at line 151 of file caca_socket\&.c\&.
+.PP
+Referenced by main()\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

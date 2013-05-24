@@ -1,0 +1,338 @@
+\hypertarget{caca__socket_8h}{\section{include/caca\-\_\-socket.h \-File \-Reference}
+\label{caca__socket_8h}\index{include/caca\-\_\-socket.\-h@{include/caca\-\_\-socket.\-h}}
+}
+
+
+\-The caca\-\_\-socket implementation file for cacatalk connections to a listening peer.  
+
+
+{\ttfamily \#include $<$stdio.\-h$>$}\*
+{\ttfamily \#include $<$unistd.\-h$>$}\*
+{\ttfamily \#include $<$string.\-h$>$}\*
+{\ttfamily \#include $<$stdlib.\-h$>$}\*
+{\ttfamily \#include $<$fcntl.\-h$>$}\*
+{\ttfamily \#include $<$sys/types.\-h$>$}\*
+{\ttfamily \#include $<$sys/socket.\-h$>$}\*
+{\ttfamily \#include $<$netinet/in.\-h$>$}\*
+{\ttfamily \#include $<$arpa/inet.\-h$>$}\*
+{\ttfamily \#include $<$netdb.\-h$>$}\*
+{\ttfamily \#include $<$ctype.\-h$>$}\*
+{\ttfamily \#include $<$signal.\-h$>$}\*
+{\ttfamily \#include $<$errno.\-h$>$}\*
+\-Include dependency graph for caca\-\_\-socket.\-h\-:
+\-This graph shows which files directly or indirectly include this file\-:
+\subsection*{\-Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{caca__socket_8h_a369266c24eacffb87046522897a570d5}{\-\_\-\-G\-N\-U\-\_\-\-S\-O\-U\-R\-C\-E}
+\item 
+\#define \hyperlink{caca__socket_8h_a964e73b2a42e87b1e20c8ffa730952a2}{\-S\-O\-C\-K\-A\-D\-D\-R}~(struct sockaddr$\ast$)
+\item 
+\#define \hyperlink{caca__socket_8h_a70ed59adcb4159ac551058053e649640}{\-S\-I\-Z\-E}~sizeof(struct sockaddr\-\_\-in)
+\item 
+\#define \hyperlink{caca__socket_8h_a31d0fe8f8e2de5c00f47342e9ea66dbd}{\-D\-E\-F\-A\-U\-L\-T\-\_\-\-H\-O\-S\-T}~\char`\"{}eniac.\-geo.\-hunter.\-cuny.\-edu\char`\"{}
+\item 
+\#define \hyperlink{caca__socket_8h_a3c6efc49961765529dadc6091495d82d}{\-P\-O\-R\-T\-\_\-\-C\-H\-A\-T}~25666
+\item 
+\#define \hyperlink{caca__socket_8h_a8735e53fd3288186bf8631614c4d9954}{\-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O}~25667
+\item 
+\#define \hyperlink{caca__socket_8h_ae91f29481f47733c4e7b2c5d66483acf}{\-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T}(\-\_\-mssg, \-\_\-num)~perror(\-\_\-mssg);exit(\-\_\-num);
+\item 
+\#define \hyperlink{caca__socket_8h_a3e937c42922f7601edb17b747602c471}{\-M\-A\-X\-L\-I\-N\-E}~4096
+\item 
+\#define \hyperlink{caca__socket_8h_a20fda9ab0b5d6acee29eaad428d8c099}{\-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E}~5
+\item 
+\#define \hyperlink{caca__socket_8h_a6ecb7222014257e538c32fa288bdf284}{\-M\-A\-X\-F\-D}(\-\_\-x, \-\_\-y)~((\-\_\-x)$>$(\-\_\-y)?(\-\_\-x)\-:(\-\_\-y))
+\end{DoxyCompactItemize}
+\subsection*{\-Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef void \hyperlink{caca__socket_8h_ad44ec8ef7177e98b868c0efb6c0af973}{\-Sigfunc} (int)
+\begin{DoxyCompactList}\small\item\em \-The following typedef simplifies the function definition after it. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{\-Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{caca__socket_8h_ae02d2b25cdccbafa8aa0e18f2fba04a8}{set\-\_\-non\-\_\-block} (int fd)
+\item 
+int \hyperlink{caca__socket_8h_a1ab204b840c5e05cb3112dd59315a782}{connect\-\_\-to\-\_\-peer\-\_\-socket} (const char $\ast$peer\-\_\-hostname, struct sockaddr\-\_\-in $\ast$server, in\-\_\-port\-\_\-t port)
+\item 
+int \hyperlink{caca__socket_8h_a210437edf28fdb4e5c0ecba095c59fb7}{inet\-\_\-connect} (const char $\ast$host, const char $\ast$service, int type)
+\begin{DoxyCompactList}\small\item\em \-Create socket and connect it to the address specified by 'host' + 'service'/'type'. \end{DoxyCompactList}\item 
+void \hyperlink{caca__socket_8h_a8bf72939eebda854c12d4afdb110bd45}{get\-\_\-\-I\-P\-\_\-addresses} (char $\ast$presentation\-\_\-addr, int print)
+\begin{DoxyCompactList}\small\item\em \-Resolves all the network interfaces and prints addresses to standard output (if desired) \-In fact, it provides the \-I\-Pv4 presentation address for the local host. \end{DoxyCompactList}\item 
+\hyperlink{caca__socket_8h_ad44ec8ef7177e98b868c0efb6c0af973}{\-Sigfunc} $\ast$ \hyperlink{caca__socket_8h_a977d57b327a661ac50e2a8be6974b0ec}{\-Signal} (int signo, \hyperlink{caca__socket_8h_ad44ec8ef7177e98b868c0efb6c0af973}{\-Sigfunc} $\ast$func)
+\begin{DoxyCompactList}\small\item\em override existing signal function to handle non-\/\-B\-S\-D systems \end{DoxyCompactList}\item 
+void \hyperlink{caca__socket_8h_a21ef321a1bc43e7daff624dd67051c74}{on\-\_\-sigchld} (int signo)
+\end{DoxyCompactItemize}
+
+
+\subsection{\-Detailed \-Description}
+\-The caca\-\_\-socket implementation file for cacatalk connections to a listening peer. \-The caca\-\_\-socket public header based on sockets usef by  .
+
+\begin{DoxyAuthor}{\-Author}
+\-Carlos \-Jaramillo $<$\href{mailto:cjaramillo@gc.cuny.edu}{\tt cjaramillo@gc.\-cuny.\-edu}$>$ \-Course \-: \-C\-S 82010 \-U\-N\-I\-X \-Application \-Development (\-Spring 2013) \-Created on \-: \-May 24, 2013 \-Description \-: \-A very simple video and text chat interface (peer-\/to-\/peer (non centralized)) based on libcaca \-License \-: ​\-Do \-What \-The \-Fuck \-You \-Want \-To \-Public \-License (\-W\-T\-F\-P\-L) 
+\end{DoxyAuthor}
+
+
+\-Definition in file \hyperlink{caca__socket_8h_source}{caca\-\_\-socket.\-h}.
+
+
+
+\subsection{\-Define \-Documentation}
+\hypertarget{caca__socket_8h_a369266c24eacffb87046522897a570d5}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-\_\-\-G\-N\-U\-\_\-\-S\-O\-U\-R\-C\-E@{\-\_\-\-G\-N\-U\-\_\-\-S\-O\-U\-R\-C\-E}}
+\index{\-\_\-\-G\-N\-U\-\_\-\-S\-O\-U\-R\-C\-E@{\-\_\-\-G\-N\-U\-\_\-\-S\-O\-U\-R\-C\-E}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-\_\-\-G\-N\-U\-\_\-\-S\-O\-U\-R\-C\-E}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-\_\-\-G\-N\-U\-\_\-\-S\-O\-U\-R\-C\-E}}}\label{caca__socket_8h_a369266c24eacffb87046522897a570d5}
+
+
+\-Definition at line 19 of file caca\-\_\-socket.\-h.
+
+\hypertarget{caca__socket_8h_a31d0fe8f8e2de5c00f47342e9ea66dbd}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-D\-E\-F\-A\-U\-L\-T\-\_\-\-H\-O\-S\-T@{\-D\-E\-F\-A\-U\-L\-T\-\_\-\-H\-O\-S\-T}}
+\index{\-D\-E\-F\-A\-U\-L\-T\-\_\-\-H\-O\-S\-T@{\-D\-E\-F\-A\-U\-L\-T\-\_\-\-H\-O\-S\-T}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-D\-E\-F\-A\-U\-L\-T\-\_\-\-H\-O\-S\-T}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-D\-E\-F\-A\-U\-L\-T\-\_\-\-H\-O\-S\-T}~\char`\"{}eniac.\-geo.\-hunter.\-cuny.\-edu\char`\"{}}}\label{caca__socket_8h_a31d0fe8f8e2de5c00f47342e9ea66dbd}
+
+
+\-Definition at line 31 of file caca\-\_\-socket.\-h.
+
+\hypertarget{caca__socket_8h_ae91f29481f47733c4e7b2c5d66483acf}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T@{\-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T}}
+\index{\-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T@{\-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T}(
+\begin{DoxyParamCaption}
+\item[{}]{\-\_\-mssg, }
+\item[{}]{\-\_\-num}
+\end{DoxyParamCaption}
+)~perror(\-\_\-mssg);exit(\-\_\-num);}}\label{caca__socket_8h_ae91f29481f47733c4e7b2c5d66483acf}
+
+
+\-Definition at line 34 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by connect\-\_\-to\-\_\-peer\-\_\-socket(), and main().
+
+\hypertarget{caca__socket_8h_a20fda9ab0b5d6acee29eaad428d8c099}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E@{\-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E}}
+\index{\-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E@{\-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E}~5}}\label{caca__socket_8h_a20fda9ab0b5d6acee29eaad428d8c099}
+
+
+\-Definition at line 36 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by main().
+
+\hypertarget{caca__socket_8h_a6ecb7222014257e538c32fa288bdf284}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-M\-A\-X\-F\-D@{\-M\-A\-X\-F\-D}}
+\index{\-M\-A\-X\-F\-D@{\-M\-A\-X\-F\-D}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-M\-A\-X\-F\-D}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-M\-A\-X\-F\-D}(
+\begin{DoxyParamCaption}
+\item[{}]{\-\_\-x, }
+\item[{}]{\-\_\-y}
+\end{DoxyParamCaption}
+)~((\-\_\-x)$>$(\-\_\-y)?(\-\_\-x)\-:(\-\_\-y))}}\label{caca__socket_8h_a6ecb7222014257e538c32fa288bdf284}
+
+
+\-Definition at line 37 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by chat(), and send\-\_\-video\-\_\-thread().
+
+\hypertarget{caca__socket_8h_a3e937c42922f7601edb17b747602c471}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-M\-A\-X\-L\-I\-N\-E@{\-M\-A\-X\-L\-I\-N\-E}}
+\index{\-M\-A\-X\-L\-I\-N\-E@{\-M\-A\-X\-L\-I\-N\-E}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-M\-A\-X\-L\-I\-N\-E}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-M\-A\-X\-L\-I\-N\-E}~4096}}\label{caca__socket_8h_a3e937c42922f7601edb17b747602c471}
+
+
+\-Definition at line 35 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by chat(), and connect\-\_\-to\-\_\-peer\-\_\-socket().
+
+\hypertarget{caca__socket_8h_a3c6efc49961765529dadc6091495d82d}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-P\-O\-R\-T\-\_\-\-C\-H\-A\-T@{\-P\-O\-R\-T\-\_\-\-C\-H\-A\-T}}
+\index{\-P\-O\-R\-T\-\_\-\-C\-H\-A\-T@{\-P\-O\-R\-T\-\_\-\-C\-H\-A\-T}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-P\-O\-R\-T\-\_\-\-C\-H\-A\-T}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-P\-O\-R\-T\-\_\-\-C\-H\-A\-T}~25666}}\label{caca__socket_8h_a3c6efc49961765529dadc6091495d82d}
+
+
+\-Definition at line 32 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by main().
+
+\hypertarget{caca__socket_8h_a8735e53fd3288186bf8631614c4d9954}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O@{\-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O}}
+\index{\-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O@{\-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O}~25667}}\label{caca__socket_8h_a8735e53fd3288186bf8631614c4d9954}
+
+
+\-Definition at line 33 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by main().
+
+\hypertarget{caca__socket_8h_a70ed59adcb4159ac551058053e649640}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-S\-I\-Z\-E@{\-S\-I\-Z\-E}}
+\index{\-S\-I\-Z\-E@{\-S\-I\-Z\-E}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-S\-I\-Z\-E}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-S\-I\-Z\-E}~sizeof(struct sockaddr\-\_\-in)}}\label{caca__socket_8h_a70ed59adcb4159ac551058053e649640}
+
+
+\-Definition at line 30 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by connect\-\_\-to\-\_\-peer\-\_\-socket().
+
+\hypertarget{caca__socket_8h_a964e73b2a42e87b1e20c8ffa730952a2}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-S\-O\-C\-K\-A\-D\-D\-R@{\-S\-O\-C\-K\-A\-D\-D\-R}}
+\index{\-S\-O\-C\-K\-A\-D\-D\-R@{\-S\-O\-C\-K\-A\-D\-D\-R}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-S\-O\-C\-K\-A\-D\-D\-R}]{\setlength{\rightskip}{0pt plus 5cm}\#define {\bf \-S\-O\-C\-K\-A\-D\-D\-R}~(struct sockaddr$\ast$)}}\label{caca__socket_8h_a964e73b2a42e87b1e20c8ffa730952a2}
+
+
+\-Definition at line 29 of file caca\-\_\-socket.\-h.
+
+
+
+\-Referenced by connect\-\_\-to\-\_\-peer\-\_\-socket(), and main().
+
+
+
+\subsection{\-Typedef \-Documentation}
+\hypertarget{caca__socket_8h_ad44ec8ef7177e98b868c0efb6c0af973}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-Sigfunc@{\-Sigfunc}}
+\index{\-Sigfunc@{\-Sigfunc}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-Sigfunc}]{\setlength{\rightskip}{0pt plus 5cm}typedef void {\bf \-Sigfunc}(int)}}\label{caca__socket_8h_ad44ec8ef7177e98b868c0efb6c0af973}
+
+
+\-The following typedef simplifies the function definition after it. 
+
+
+
+\-Definition at line 73 of file caca\-\_\-socket.\-h.
+
+
+
+\subsection{\-Function \-Documentation}
+\hypertarget{caca__socket_8h_a1ab204b840c5e05cb3112dd59315a782}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!connect\-\_\-to\-\_\-peer\-\_\-socket@{connect\-\_\-to\-\_\-peer\-\_\-socket}}
+\index{connect\-\_\-to\-\_\-peer\-\_\-socket@{connect\-\_\-to\-\_\-peer\-\_\-socket}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{connect\-\_\-to\-\_\-peer\-\_\-socket}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf connect\-\_\-to\-\_\-peer\-\_\-socket} (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{peer\-\_\-hostname, }
+\item[{struct sockaddr\-\_\-in $\ast$}]{server, }
+\item[{in\-\_\-port\-\_\-t}]{port}
+\end{DoxyParamCaption}
+)}}\label{caca__socket_8h_a1ab204b840c5e05cb3112dd59315a782}
+\-T\-O\-D\-O\-: description
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em peer\-\_\-hostname} & \-The \-I\-P address or hostname as a human readable character string \\
+\hline
+{\em server} & \-The socket address structure to be realized based on the connection to the peer\-\_\-hostname \\
+\hline
+{\em port} & \-The port number to connect to (assumes the other side is listening)\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{\-Returns}
+socket file descriptor number. \-Or -\/1 if not connected. 
+\end{DoxyReturn}
+
+
+\-Definition at line 57 of file caca\-\_\-socket.\-c.
+
+
+
+\-References \-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T, \-M\-A\-X\-L\-I\-N\-E, \-S\-I\-Z\-E, and \-S\-O\-C\-K\-A\-D\-D\-R.
+
+
+
+\-Referenced by main().
+
+\hypertarget{caca__socket_8h_a8bf72939eebda854c12d4afdb110bd45}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!get\-\_\-\-I\-P\-\_\-addresses@{get\-\_\-\-I\-P\-\_\-addresses}}
+\index{get\-\_\-\-I\-P\-\_\-addresses@{get\-\_\-\-I\-P\-\_\-addresses}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{get\-\_\-\-I\-P\-\_\-addresses}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf get\-\_\-\-I\-P\-\_\-addresses} (
+\begin{DoxyParamCaption}
+\item[{char $\ast$}]{presentation\-\_\-addr, }
+\item[{int}]{print}
+\end{DoxyParamCaption}
+)}}\label{caca__socket_8h_a8bf72939eebda854c12d4afdb110bd45}
+
+
+\-Resolves all the network interfaces and prints addresses to standard output (if desired) \-In fact, it provides the \-I\-Pv4 presentation address for the local host. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em presentation\-\_\-addr} & \-The presentation address in \-I\-Pv4 format (dotted decimal) \\
+\hline
+{\em print} & 1\-: prints all addresses to standard output. \-Or not (0\-: default) \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 19 of file caca\-\_\-socket.\-c.
+
+
+
+\-Referenced by get\-\_\-options().
+
+\hypertarget{caca__socket_8h_a210437edf28fdb4e5c0ecba095c59fb7}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!inet\-\_\-connect@{inet\-\_\-connect}}
+\index{inet\-\_\-connect@{inet\-\_\-connect}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{inet\-\_\-connect}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf inet\-\_\-connect} (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{host, }
+\item[{const char $\ast$}]{service, }
+\item[{int}]{type}
+\end{DoxyParamCaption}
+)}}\label{caca__socket_8h_a210437edf28fdb4e5c0ecba095c59fb7}
+
+
+\-Create socket and connect it to the address specified by 'host' + 'service'/'type'. 
+
+\begin{DoxyNote}{\-Note}
+\-Function based on \-Michael \-Kerrisk's source code for his book \char`\"{}\-The Linux Programming Interface\char`\"{}
+\end{DoxyNote}
+
+\begin{DoxyParams}{\-Parameters}
+{\em host} & \-N\-U\-L\-L for loopback \-I\-P address, or a host name or numeric \-I\-P address \\
+\hline
+{\em service} & either a name or a port number \\
+\hline
+{\em type} & either \-S\-O\-C\-K\-\_\-\-S\-T\-R\-E\-A\-M or \-S\-O\-C\-K\-\_\-\-D\-G\-R\-A\-M\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{\-Returns}
+socket descriptor on success, or -\/1 on error 
+\end{DoxyReturn}
+
+
+\-Definition at line 109 of file caca\-\_\-socket.\-c.
+
+\hypertarget{caca__socket_8h_a21ef321a1bc43e7daff624dd67051c74}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!on\-\_\-sigchld@{on\-\_\-sigchld}}
+\index{on\-\_\-sigchld@{on\-\_\-sigchld}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{on\-\_\-sigchld}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf on\-\_\-sigchld} (
+\begin{DoxyParamCaption}
+\item[{int}]{signo}
+\end{DoxyParamCaption}
+)}}\label{caca__socket_8h_a21ef321a1bc43e7daff624dd67051c74}
+\hypertarget{caca__socket_8h_ae02d2b25cdccbafa8aa0e18f2fba04a8}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!set\-\_\-non\-\_\-block@{set\-\_\-non\-\_\-block}}
+\index{set\-\_\-non\-\_\-block@{set\-\_\-non\-\_\-block}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{set\-\_\-non\-\_\-block}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf set\-\_\-non\-\_\-block} (
+\begin{DoxyParamCaption}
+\item[{int}]{fd}
+\end{DoxyParamCaption}
+)}}\label{caca__socket_8h_ae02d2b25cdccbafa8aa0e18f2fba04a8}
+
+
+\-Definition at line 151 of file caca\-\_\-socket.\-c.
+
+
+
+\-Referenced by main().
+
+\hypertarget{caca__socket_8h_a977d57b327a661ac50e2a8be6974b0ec}{\index{caca\-\_\-socket.\-h@{caca\-\_\-socket.\-h}!\-Signal@{\-Signal}}
+\index{\-Signal@{\-Signal}!caca_socket.h@{caca\-\_\-socket.\-h}}
+\subsubsection[{\-Signal}]{\setlength{\rightskip}{0pt plus 5cm}{\bf \-Sigfunc}$\ast$ {\bf \-Signal} (
+\begin{DoxyParamCaption}
+\item[{int}]{signo, }
+\item[{{\bf \-Sigfunc} $\ast$}]{func}
+\end{DoxyParamCaption}
+)}}\label{caca__socket_8h_a977d57b327a661ac50e2a8be6974b0ec}
+
+
+override existing signal function to handle non-\/\-B\-S\-D systems 
+

@@ -1,0 +1,101 @@
+\hypertarget{structvideo__out__args__s}{\section{video\-\_\-out\-\_\-args\-\_\-s \-Struct \-Reference}
+\label{structvideo__out__args__s}\index{video\-\_\-out\-\_\-args\-\_\-s@{video\-\_\-out\-\_\-args\-\_\-s}}
+}
+
+
+structure of arguments passed to a thread (also is going to be made global to be able to shut the video on and off)  
+
+
+
+
+{\ttfamily \#include $<$cacatalk.\-h$>$}
+
+
+
+\-Collaboration diagram for video\-\_\-out\-\_\-args\-\_\-s\-:
+\subsection*{\-Public \-Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{structvideo__out__args__s_aaf0a67c5a877ce3505ad692e62f40b27}{socketfd}
+\begin{DoxyCompactList}\small\item\em \-The socket file descriptor for streaming video. \end{DoxyCompactList}\item 
+int \hyperlink{structvideo__out__args__s_a3ccef1d0e1be0c01d38e75a4303fc46d}{quit}
+\begin{DoxyCompactList}\small\item\em \-Set to 1 to indicate to quite. \end{DoxyCompactList}\item 
+\hyperlink{cacatalk_8h_abe08d2c8dcdb909042427bfe5d771110}{\-Window} $\ast$ \hyperlink{structvideo__out__args__s_a4c05a7d1e0e170c01b122e3419434b7c}{win}
+\begin{DoxyCompactList}\small\item\em \-Pointer to window object structure. \end{DoxyCompactList}\item 
+\hyperlink{cacatalk_8h_ae3d11b6af4cc159b10400210dcefa284}{video\-\_\-params} $\ast$ \hyperlink{structvideo__out__args__s_a14fbf8a3ffd4d9534c61bff3fd6c6004}{vid\-\_\-params}
+\begin{DoxyCompactList}\small\item\em \-Pointer to host's video device parameters structure. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{\-Detailed \-Description}
+structure of arguments passed to a thread (also is going to be made global to be able to shut the video on and off) 
+
+\-Definition at line 144 of file cacatalk.\-h.
+
+
+
+\subsection{\-Member \-Data \-Documentation}
+\hypertarget{structvideo__out__args__s_a3ccef1d0e1be0c01d38e75a4303fc46d}{\index{video\-\_\-out\-\_\-args\-\_\-s@{video\-\_\-out\-\_\-args\-\_\-s}!quit@{quit}}
+\index{quit@{quit}!video_out_args_s@{video\-\_\-out\-\_\-args\-\_\-s}}
+\subsubsection[{quit}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf video\-\_\-out\-\_\-args\-\_\-s\-::quit}}}\label{structvideo__out__args__s_a3ccef1d0e1be0c01d38e75a4303fc46d}
+
+
+\-Set to 1 to indicate to quite. 
+
+
+
+\-Definition at line 147 of file cacatalk.\-h.
+
+
+
+\-Referenced by main(), and send\-\_\-video\-\_\-thread().
+
+\hypertarget{structvideo__out__args__s_aaf0a67c5a877ce3505ad692e62f40b27}{\index{video\-\_\-out\-\_\-args\-\_\-s@{video\-\_\-out\-\_\-args\-\_\-s}!socketfd@{socketfd}}
+\index{socketfd@{socketfd}!video_out_args_s@{video\-\_\-out\-\_\-args\-\_\-s}}
+\subsubsection[{socketfd}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf video\-\_\-out\-\_\-args\-\_\-s\-::socketfd}}}\label{structvideo__out__args__s_aaf0a67c5a877ce3505ad692e62f40b27}
+
+
+\-The socket file descriptor for streaming video. 
+
+
+
+\-Definition at line 146 of file cacatalk.\-h.
+
+
+
+\-Referenced by display\-\_\-menu(), main(), and send\-\_\-video\-\_\-thread().
+
+\hypertarget{structvideo__out__args__s_a14fbf8a3ffd4d9534c61bff3fd6c6004}{\index{video\-\_\-out\-\_\-args\-\_\-s@{video\-\_\-out\-\_\-args\-\_\-s}!vid\-\_\-params@{vid\-\_\-params}}
+\index{vid\-\_\-params@{vid\-\_\-params}!video_out_args_s@{video\-\_\-out\-\_\-args\-\_\-s}}
+\subsubsection[{vid\-\_\-params}]{\setlength{\rightskip}{0pt plus 5cm}{\bf video\-\_\-params}$\ast$ {\bf video\-\_\-out\-\_\-args\-\_\-s\-::vid\-\_\-params}}}\label{structvideo__out__args__s_a14fbf8a3ffd4d9534c61bff3fd6c6004}
+
+
+\-Pointer to host's video device parameters structure. 
+
+
+
+\-Definition at line 149 of file cacatalk.\-h.
+
+
+
+\-Referenced by chat(), display\-\_\-menu(), main(), and send\-\_\-video\-\_\-thread().
+
+\hypertarget{structvideo__out__args__s_a4c05a7d1e0e170c01b122e3419434b7c}{\index{video\-\_\-out\-\_\-args\-\_\-s@{video\-\_\-out\-\_\-args\-\_\-s}!win@{win}}
+\index{win@{win}!video_out_args_s@{video\-\_\-out\-\_\-args\-\_\-s}}
+\subsubsection[{win}]{\setlength{\rightskip}{0pt plus 5cm}{\bf \-Window}$\ast$ {\bf video\-\_\-out\-\_\-args\-\_\-s\-::win}}}\label{structvideo__out__args__s_a4c05a7d1e0e170c01b122e3419434b7c}
+
+
+\-Pointer to window object structure. 
+
+
+
+\-Definition at line 148 of file cacatalk.\-h.
+
+
+
+\-Referenced by main(), and send\-\_\-video\-\_\-thread().
+
+
+
+\-The documentation for this struct was generated from the following file\-:\begin{DoxyCompactItemize}
+\item 
+include/\hyperlink{cacatalk_8h}{cacatalk.\-h}\end{DoxyCompactItemize}

@@ -1,0 +1,259 @@
+.TH "video_params_s" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+video_params_s \- 
+.PP
+This structure stores the video device parameters that are used for streaming video frames with V4L2\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <cacatalk\&.h>\fP
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "int \fBis_ok\fP"
+.br
+.RI "\fI1: Indicates when the video device is setup correctly\&. 0: is not okay \fP"
+.ti -1c
+.RI "int \fBis_on\fP"
+.br
+.RI "\fI1: Indicates when the video device is streaming\&. 0: the video is not streaming\&. -1: status is undefined \fP"
+.ti -1c
+.RI "char \fBdev_name\fP [MAXPATHLEN]"
+.br
+.RI "\fIthe path to the video device name \fP"
+.ti -1c
+.RI "int \fBimg_width\fP"
+.br
+.RI "\fIVideo frame width\&. \fP"
+.ti -1c
+.RI "int \fBimg_height\fP"
+.br
+.RI "\fIVideo frame heigth\&. \fP"
+.ti -1c
+.RI "int \fBv4l_fd\fP"
+.br
+.RI "\fIfile despcriptor for the open video device \fP"
+.ti -1c
+.RI "struct v4l2_format \fBfmt\fP"
+.br
+.RI "\fIv4l stream data format \fP"
+.ti -1c
+.RI "struct v4l2_buffer \fBbuf\fP"
+.br
+.RI "\fIvideo buffer info \fP"
+.ti -1c
+.RI "struct v4l2_requestbuffers \fBreq\fP"
+.br
+.RI "\fIv4l memory mapping buffers (cacatalk uses a double buffer) \fP"
+.ti -1c
+.RI "unsigned int \fBnumber_of_buffers\fP"
+.br
+.RI "\fIThe number of memory mapping buffers\&. \fP"
+.ti -1c
+.RI "struct \fBbuffer\fP * \fBbuffers\fP"
+.br
+.RI "\fIarray of memory buffer structure for video \fP"
+.ti -1c
+.RI "enum v4l2_buf_type \fBtype\fP"
+.br
+.RI "\fIIndicates the type of buffering (e\&.g\&. V4L2_BUF_TYPE_VIDEO_CAPTURE) \fP"
+.ti -1c
+.RI "enum v4l2_memory \fBmemory\fP"
+.br
+.RI "\fIIndicates the type of memory for v4l stream (e\&.g\&. V4L2_MEMORY_MMAP) \fP"
+.ti -1c
+.RI "char * \fBcaca_format\fP"
+.br
+.RI "\fIpreferred libcaca format (e\&.g\&. 'ansi') to export video (for transmission) \fP"
+.ti -1c
+.RI "char * \fBcaca_dither\fP"
+.br
+.RI "\fIIndicates the algorithm to be used for dithering with libcaca\&. \fP"
+.ti -1c
+.RI "float \fBcaca_gamma\fP"
+.br
+.RI "\fIGamma value (unset: to be implemented in the future) \fP"
+.ti -1c
+.RI "float \fBcaca_brightness\fP"
+.br
+.RI "\fIBrightness (unset: to be implemented in the future) \fP"
+.ti -1c
+.RI "float \fBcaca_contrast\fP"
+.br
+.RI "\fIContrast (unset: to be implemented in the future) \fP"
+.ti -1c
+.RI "float \fBaspect_ratio\fP"
+.br
+.RI "\fIAspect ratio based to fit video in given number of columns in caca_canvas\&. \fP"
+.ti -1c
+.RI "unsigned int \fBcv_rows\fP"
+.br
+.RI "\fINumber of rows to resolve video on caca _anvas\&. \fP"
+.ti -1c
+.RI "unsigned int \fBcv_cols\fP"
+.br
+.RI "\fINumber of columns to resolve video on caca _anvas\&. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+This structure stores the video device parameters that are used for streaming video frames with V4L2\&. 
+.PP
+Definition at line 117 of file cacatalk\&.h\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "float \fBvideo_params_s::aspect_ratio\fP"
+.PP
+Aspect ratio based to fit video in given number of columns in caca_canvas\&. 
+.PP
+Definition at line 137 of file cacatalk\&.h\&.
+.PP
+Referenced by set_video()\&.
+.SS "struct v4l2_buffer \fBvideo_params_s::buf\fP"
+.PP
+video buffer info 
+.PP
+Definition at line 126 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "struct \fBbuffer\fP* \fBvideo_params_s::buffers\fP"
+.PP
+array of memory buffer structure for video 
+.PP
+Definition at line 129 of file cacatalk\&.h\&.
+.PP
+Referenced by close_video_stream(), send_video_thread(), and set_video()\&.
+.SS "float \fBvideo_params_s::caca_brightness\fP"
+.PP
+Brightness (unset: to be implemented in the future) 
+.PP
+Definition at line 135 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "float \fBvideo_params_s::caca_contrast\fP"
+.PP
+Contrast (unset: to be implemented in the future) 
+.PP
+Definition at line 136 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "char* \fBvideo_params_s::caca_dither\fP"
+.PP
+Indicates the algorithm to be used for dithering with libcaca\&. 
+.PP
+Definition at line 133 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "char* \fBvideo_params_s::caca_format\fP"
+.PP
+preferred libcaca format (e\&.g\&. 'ansi') to export video (for transmission) 
+.PP
+Definition at line 132 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "float \fBvideo_params_s::caca_gamma\fP"
+.PP
+Gamma value (unset: to be implemented in the future) 
+.PP
+Definition at line 134 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "unsigned int \fBvideo_params_s::cv_cols\fP"
+.PP
+Number of columns to resolve video on caca _anvas\&. 
+.PP
+Definition at line 139 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "unsigned int \fBvideo_params_s::cv_rows\fP"
+.PP
+Number of rows to resolve video on caca _anvas\&. 
+.PP
+Definition at line 138 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "char \fBvideo_params_s::dev_name\fP[MAXPATHLEN]"
+.PP
+the path to the video device name 
+.PP
+Definition at line 121 of file cacatalk\&.h\&.
+.PP
+Referenced by set_video()\&.
+.SS "struct v4l2_format \fBvideo_params_s::fmt\fP"
+.PP
+v4l stream data format 
+.PP
+Definition at line 125 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "int \fBvideo_params_s::img_height\fP"
+.PP
+Video frame heigth\&. 
+.PP
+Definition at line 123 of file cacatalk\&.h\&.
+.PP
+Referenced by set_video()\&.
+.SS "int \fBvideo_params_s::img_width\fP"
+.PP
+Video frame width\&. 
+.PP
+Definition at line 122 of file cacatalk\&.h\&.
+.PP
+Referenced by set_video()\&.
+.SS "int \fBvideo_params_s::is_ok\fP"
+.PP
+1: Indicates when the video device is setup correctly\&. 0: is not okay 
+.PP
+Definition at line 119 of file cacatalk\&.h\&.
+.PP
+Referenced by change_video_device(), chat(), display_menu(), send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
+.SS "int \fBvideo_params_s::is_on\fP"
+.PP
+1: Indicates when the video device is streaming\&. 0: the video is not streaming\&. -1: status is undefined 
+.PP
+Definition at line 120 of file cacatalk\&.h\&.
+.PP
+Referenced by chat(), send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
+.SS "enum v4l2_memory \fBvideo_params_s::memory\fP"
+.PP
+Indicates the type of memory for v4l stream (e\&.g\&. V4L2_MEMORY_MMAP) 
+.PP
+Definition at line 131 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), and set_video()\&.
+.SS "unsigned int \fBvideo_params_s::number_of_buffers\fP"
+.PP
+The number of memory mapping buffers\&. 
+.PP
+Definition at line 128 of file cacatalk\&.h\&.
+.PP
+Referenced by close_video_stream(), and set_video()\&.
+.SS "struct v4l2_requestbuffers \fBvideo_params_s::req\fP"
+.PP
+v4l memory mapping buffers (cacatalk uses a double buffer) 
+.PP
+Definition at line 127 of file cacatalk\&.h\&.
+.PP
+Referenced by set_video()\&.
+.SS "enum v4l2_buf_type \fBvideo_params_s::type\fP"
+.PP
+Indicates the type of buffering (e\&.g\&. V4L2_BUF_TYPE_VIDEO_CAPTURE) 
+.PP
+Definition at line 130 of file cacatalk\&.h\&.
+.PP
+Referenced by send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
+.SS "int \fBvideo_params_s::v4l_fd\fP"
+.PP
+file despcriptor for the open video device 
+.PP
+Definition at line 124 of file cacatalk\&.h\&.
+.PP
+Referenced by close_video_stream(), send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

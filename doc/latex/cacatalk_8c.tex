@@ -1,0 +1,561 @@
+\hypertarget{cacatalk_8c}{\section{src/cacatalk.c \-File \-Reference}
+\label{cacatalk_8c}\index{src/cacatalk.\-c@{src/cacatalk.\-c}}
+}
+{\ttfamily \#include $<$stdio.\-h$>$}\*
+{\ttfamily \#include $<$stdlib.\-h$>$}\*
+{\ttfamily \#include $<$string.\-h$>$}\*
+{\ttfamily \#include $<$fcntl.\-h$>$}\*
+{\ttfamily \#include $<$errno.\-h$>$}\*
+{\ttfamily \#include $<$sys/ioctl.\-h$>$}\*
+{\ttfamily \#include $<$sys/types.\-h$>$}\*
+{\ttfamily \#include $<$sys/time.\-h$>$}\*
+{\ttfamily \#include $<$sys/mman.\-h$>$}\*
+{\ttfamily \#include $<$sys/select.\-h$>$}\*
+{\ttfamily \#include \char`\"{}cacatalk.\-h\char`\"{}}\*
+{\ttfamily \#include \char`\"{}common\-\_\-image.\-h\char`\"{}}\*
+{\ttfamily \#include \char`\"{}caca\-\_\-socket.\-h\char`\"{}}\*
+\-Include dependency graph for cacatalk.\-c\-:
+\subsection*{\-Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{cacatalk_8c_a3c04138a5bfe5d72780bb7e82a18e627}{main} (int argc, char $\ast$$\ast$argv)
+\item 
+void \hyperlink{cacatalk_8c_ab0867c19bcdc2d3ad6c0896ffea47c9d}{display\-\_\-menu} (caca\-\_\-canvas\-\_\-t $\ast$cv, \hyperlink{cacatalk_8h_a53ebf62c20f5ec338ba8eda81a032f5b}{options} $\ast$arg\-\_\-opts)
+\begin{DoxyCompactList}\small\item\em \-It draws the main menu indicating posible options tied to keyboard commands. \end{DoxyCompactList}\item 
+int \hyperlink{cacatalk_8c_afb3b236599a47f68e858b33e30efc8a7}{chat} (caca\-\_\-canvas\-\_\-t $\ast$cv, caca\-\_\-display\-\_\-t $\ast$dp, int text\-\_\-fd, int vid\-\_\-fd, \hyperlink{cacatalk_8h_abe08d2c8dcdb909042427bfe5d771110}{\-Window} $\ast$win, char $\ast$peer\-\_\-hostname)
+\begin{DoxyCompactList}\small\item\em \-This is the main chatroom environment where text data is sent/received via a single text socket, and video is received using another socket. \end{DoxyCompactList}\item 
+int \hyperlink{cacatalk_8c_af94b7f7637d9f1d5d6338bdb13cdbfbb}{set\-\_\-video} (\hyperlink{cacatalk_8h_ae3d11b6af4cc159b10400210dcefa284}{video\-\_\-params} $\ast$vid\-\_\-params, char $\ast$dev\-\_\-name, \hyperlink{cacatalk_8h_abe08d2c8dcdb909042427bfe5d771110}{\-Window} $\ast$win, int img\-\_\-width, int img\-\_\-height)
+\begin{DoxyCompactList}\small\item\em \-Sets the video device using the \-V4\-L2 driver. \end{DoxyCompactList}\item 
+void \hyperlink{cacatalk_8c_aa9c547c41b5d5fee785dcbb42d9685de}{set\-\_\-peer\-\_\-address} (caca\-\_\-canvas\-\_\-t $\ast$cv, caca\-\_\-display\-\_\-t $\ast$dp, \hyperlink{cacatalk_8h_a53ebf62c20f5ec338ba8eda81a032f5b}{options} $\ast$opts)
+\begin{DoxyCompactList}\small\item\em \-Sets an \-I\-P address or hostname to the peer to establish connection with. \end{DoxyCompactList}\item 
+void \hyperlink{cacatalk_8c_a14b37c9f12a52944998c3e88a64a574c}{change\-\_\-video\-\_\-device} (caca\-\_\-canvas\-\_\-t $\ast$cv, caca\-\_\-display\-\_\-t $\ast$dp, \hyperlink{cacatalk_8h_a53ebf62c20f5ec338ba8eda81a032f5b}{options} $\ast$opts, \hyperlink{cacatalk_8h_ae3d11b6af4cc159b10400210dcefa284}{video\-\_\-params} $\ast$vid\-\_\-params, \hyperlink{cacatalk_8h_abe08d2c8dcdb909042427bfe5d771110}{\-Window} $\ast$win, int img\-\_\-width, int img\-\_\-height)
+\begin{DoxyCompactList}\small\item\em \-Changes or sets the video device to be used with cacatalk. \end{DoxyCompactList}\item 
+int \hyperlink{cacatalk_8c_a3600698b52c926004b0546164aef62ca}{turn\-\_\-video\-\_\-stream\-\_\-on} (\hyperlink{cacatalk_8h_ae3d11b6af4cc159b10400210dcefa284}{video\-\_\-params} $\ast$vid\-\_\-params)
+\begin{DoxyCompactList}\small\item\em \-Attempts to turn the video stream on and sets the related indicated flag in the passed structure. \end{DoxyCompactList}\item 
+int \hyperlink{cacatalk_8c_ad62dc32c9a10f83df0e82acc91047cf4}{turn\-\_\-video\-\_\-stream\-\_\-off} (\hyperlink{cacatalk_8h_ae3d11b6af4cc159b10400210dcefa284}{video\-\_\-params} $\ast$vid\-\_\-params)
+\begin{DoxyCompactList}\small\item\em \-Attempts to turn the video stream off and sets the related indicated flag in the passed structure. \end{DoxyCompactList}\item 
+void \hyperlink{cacatalk_8c_a70a5caba7bafd8729a9fcf5c3d35f802}{close\-\_\-video\-\_\-stream} (\hyperlink{cacatalk_8h_ae3d11b6af4cc159b10400210dcefa284}{video\-\_\-params} $\ast$vid\-\_\-params)
+\begin{DoxyCompactList}\small\item\em \-Stop streaming video and close \-V4\-L video device. \end{DoxyCompactList}\item 
+int \hyperlink{cacatalk_8c_a22cce36344ad43e1d0742f8af3ba7296}{xioctl} (int fd, int request, void $\ast$arg)
+\begin{DoxyCompactList}\small\item\em \-It persistently calls the v4l2\-\_\-ioctl() function to program the \-V4\-L2 device. \end{DoxyCompactList}\item 
+void \hyperlink{cacatalk_8c_af0452d042b6a50caa5d9b6b68fbae643}{set\-\_\-window} (int fd, unsigned short video\-\_\-lines, \hyperlink{cacatalk_8h_abe08d2c8dcdb909042427bfe5d771110}{\-Window} $\ast$win, caca\-\_\-canvas\-\_\-t $\ast$cv)
+\begin{DoxyCompactList}\small\item\em \-Fills structure with current window dimensions. \end{DoxyCompactList}\item 
+int \hyperlink{cacatalk_8c_a2a6fc9780a5006f0e7f7a3cac5b852dd}{get\-\_\-options} (int argc, char $\ast$$\ast$argv, \hyperlink{cacatalk_8h_a53ebf62c20f5ec338ba8eda81a032f5b}{options} $\ast$opt)
+\begin{DoxyCompactList}\small\item\em \-Parses command-\/line options and corresponding arguments using the getopt() function found in the unistd library. \end{DoxyCompactList}\item 
+void $\ast$ \hyperlink{cacatalk_8c_a8892179bee3356c0c6399983fa614ba5}{send\-\_\-video\-\_\-thread} (void $\ast$arguments)
+\begin{DoxyCompactList}\small\item\em \-This thread grabs video frames from the local host video device and send it in the caca format to the connected peer. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{\-Variables}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{cacatalk_8h_a47c4f91cf69c2bec7dba691fc55f5565}{video\-\_\-out\-\_\-args} \hyperlink{cacatalk_8c_a58a896d0c5a5714ee4364a0e183f68fe}{g\-\_\-video\-\_\-out}
+\end{DoxyCompactItemize}
+
+
+\subsection{\-Function \-Documentation}
+\hypertarget{cacatalk_8c_a14b37c9f12a52944998c3e88a64a574c}{\index{cacatalk.\-c@{cacatalk.\-c}!change\-\_\-video\-\_\-device@{change\-\_\-video\-\_\-device}}
+\index{change\-\_\-video\-\_\-device@{change\-\_\-video\-\_\-device}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{change\-\_\-video\-\_\-device}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf change\-\_\-video\-\_\-device} (
+\begin{DoxyParamCaption}
+\item[{caca\-\_\-canvas\-\_\-t $\ast$}]{cv, }
+\item[{caca\-\_\-display\-\_\-t $\ast$}]{dp, }
+\item[{{\bf options} $\ast$}]{opts, }
+\item[{{\bf video\-\_\-params} $\ast$}]{vid\-\_\-params, }
+\item[{{\bf \-Window} $\ast$}]{win, }
+\item[{int}]{img\-\_\-width, }
+\item[{int}]{img\-\_\-height}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_a14b37c9f12a52944998c3e88a64a574c}
+
+
+\-Changes or sets the video device to be used with cacatalk. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em cv} & \-A pointer to the caca canvas \\
+\hline
+{\em dp} & \-A pointer to the caca display \\
+\hline
+{\em opts} & \-The current argument options structure into which the new hostname or \-I\-P address will be saved \\
+\hline
+{\em vid\-\_\-params} & \-A pointer to the parameters structure for the video device to which the request will be made to. \\
+\hline
+{\em win} & \-A pointer to the window parameters structure to be passed as setting video \\
+\hline
+{\em img\-\_\-width} & \-The video frame width in pixels \\
+\hline
+{\em img\-\_\-height} & \-The video frame heigh in pixels \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 1036 of file cacatalk.\-c.
+
+
+
+\-References textentry\-::buffer, \-B\-U\-F\-F\-E\-R\-\_\-\-S\-I\-Z\-E, textentry\-::changed, textentry\-::cursor, video\-\_\-params\-\_\-s\-::is\-\_\-ok, set\-\_\-video(), textentry\-::size, and options\-\_\-s\-::video\-\_\-device\-\_\-name.
+
+
+
+\-Referenced by main().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_afb3b236599a47f68e858b33e30efc8a7}{\index{cacatalk.\-c@{cacatalk.\-c}!chat@{chat}}
+\index{chat@{chat}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{chat}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf chat} (
+\begin{DoxyParamCaption}
+\item[{caca\-\_\-canvas\-\_\-t $\ast$}]{cv, }
+\item[{caca\-\_\-display\-\_\-t $\ast$}]{dp, }
+\item[{int}]{text\-\_\-fd, }
+\item[{int}]{vid\-\_\-fd, }
+\item[{{\bf \-Window} $\ast$}]{win, }
+\item[{char $\ast$}]{peer\-\_\-hostname}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_afb3b236599a47f68e858b33e30efc8a7}
+
+
+\-This is the main chatroom environment where text data is sent/received via a single text socket, and video is received using another socket. 
+
+\-Options, such as turning the video stream on/off can be toggled by pressing \char`\"{}\-Ctr+\-V\char`\"{} \-Every time the user enters a line of text, it will be sent to the peer. 
+\begin{DoxyParams}{\-Parameters}
+{\em cv} & \-A pointer to the caca canvas \\
+\hline
+{\em dp} & \-A pointer to the caca display \\
+\hline
+{\em text\-\_\-fd} & \-The socket file descriptor for sending/receiving text data \\
+\hline
+{\em vid\-\_\-fd} & \-The socket file descriptor for receiving video data \\
+\hline
+{\em win} & \-A pointer to our custom \-Window element to which information will be assigned \\
+\hline
+{\em peer\-\_\-hostname} & \-The realized username of the peer user (\-However, username is not resolved yet in this version)\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{\-Returns}
+0 if nothing went wrong. \-This function always return (unless something crashed) 
+\end{DoxyReturn}
+
+
+\-Definition at line 419 of file cacatalk.\-c.
+
+
+
+\-References textentry\-::buffer, \-B\-U\-F\-F\-E\-R\-\_\-\-S\-I\-Z\-E, \-\_\-window\-::caca\-\_\-format, textentry\-::changed, textentry\-::cursor, video\-\_\-params\-\_\-s\-::is\-\_\-ok, video\-\_\-params\-\_\-s\-::is\-\_\-on, \-M\-A\-X\-F\-D, \-M\-A\-X\-L\-I\-N\-E, textentry\-::size, \-T\-E\-X\-T\-\_\-\-E\-N\-T\-R\-I\-E\-S, turn\-\_\-video\-\_\-stream\-\_\-off(), turn\-\_\-video\-\_\-stream\-\_\-on(), video\-\_\-out\-\_\-args\-\_\-s\-::vid\-\_\-params, \-\_\-window\-::video\-\_\-cols, and \-\_\-window\-::video\-\_\-lines.
+
+
+
+\-Referenced by main().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_a70a5caba7bafd8729a9fcf5c3d35f802}{\index{cacatalk.\-c@{cacatalk.\-c}!close\-\_\-video\-\_\-stream@{close\-\_\-video\-\_\-stream}}
+\index{close\-\_\-video\-\_\-stream@{close\-\_\-video\-\_\-stream}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{close\-\_\-video\-\_\-stream}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf close\-\_\-video\-\_\-stream} (
+\begin{DoxyParamCaption}
+\item[{{\bf video\-\_\-params} $\ast$}]{vid\-\_\-params}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_a70a5caba7bafd8729a9fcf5c3d35f802}
+
+
+\-Stop streaming video and close \-V4\-L video device. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em a} & pointer to the parameters structure of the video device \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 1235 of file cacatalk.\-c.
+
+
+
+\-References video\-\_\-params\-\_\-s\-::buffers, buffer\-::length, video\-\_\-params\-\_\-s\-::number\-\_\-of\-\_\-buffers, buffer\-::start, turn\-\_\-video\-\_\-stream\-\_\-off(), and video\-\_\-params\-\_\-s\-::v4l\-\_\-fd.
+
+
+
+\-Referenced by main().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_ab0867c19bcdc2d3ad6c0896ffea47c9d}{\index{cacatalk.\-c@{cacatalk.\-c}!display\-\_\-menu@{display\-\_\-menu}}
+\index{display\-\_\-menu@{display\-\_\-menu}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{display\-\_\-menu}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf display\-\_\-menu} (
+\begin{DoxyParamCaption}
+\item[{caca\-\_\-canvas\-\_\-t $\ast$}]{cv, }
+\item[{{\bf options} $\ast$}]{arg\-\_\-opts}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_ab0867c19bcdc2d3ad6c0896ffea47c9d}
+
+
+\-It draws the main menu indicating posible options tied to keyboard commands. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em cv} & \-A pointer to the caca canvas \\
+\hline
+{\em arg\-\_\-opts} & \-The current argument options structure \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 365 of file cacatalk.\-c.
+
+
+
+\-References options\-\_\-s\-::host\-\_\-\-I\-Pv4, video\-\_\-params\-\_\-s\-::is\-\_\-ok, options\-\_\-s\-::peer\-\_\-name, video\-\_\-out\-\_\-args\-\_\-s\-::socketfd, video\-\_\-out\-\_\-args\-\_\-s\-::vid\-\_\-params, and options\-\_\-s\-::video\-\_\-device\-\_\-name.
+
+
+
+\-Referenced by main().
+
+\hypertarget{cacatalk_8c_a2a6fc9780a5006f0e7f7a3cac5b852dd}{\index{cacatalk.\-c@{cacatalk.\-c}!get\-\_\-options@{get\-\_\-options}}
+\index{get\-\_\-options@{get\-\_\-options}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{get\-\_\-options}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf get\-\_\-options} (
+\begin{DoxyParamCaption}
+\item[{int}]{argc, }
+\item[{char $\ast$$\ast$}]{argv, }
+\item[{{\bf options} $\ast$}]{opt}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_a2a6fc9780a5006f0e7f7a3cac5b852dd}
+
+
+\-Parses command-\/line options and corresponding arguments using the getopt() function found in the unistd library. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em argc} & \-The command line argument count \\
+\hline
+{\em argv} & \-The command line arguments list \\
+\hline
+{\em opt} & \-A pointer to the options structure pertaining to corresponding argument values\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyRetVals}{\-Return values}
+{\em 0} & if successfully parsed all options \\
+\hline
+{\em -\/1} & if there was an error parsing options \\
+\hline
+\end{DoxyRetVals}
+
+
+\-Definition at line 1290 of file cacatalk.\-c.
+
+
+
+\-References options\-\_\-s\-::driver\-\_\-choice, options\-\_\-s\-::driver\-\_\-options, get\-\_\-\-I\-P\-\_\-addresses(), options\-\_\-s\-::host\-\_\-\-I\-Pv4, options\-\_\-s\-::peer\-\_\-name, and options\-\_\-s\-::video\-\_\-device\-\_\-name.
+
+
+
+\-Referenced by main().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_a3c04138a5bfe5d72780bb7e82a18e627}{\index{cacatalk.\-c@{cacatalk.\-c}!main@{main}}
+\index{main@{main}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{main}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf main} (
+\begin{DoxyParamCaption}
+\item[{int}]{argc, }
+\item[{char $\ast$$\ast$}]{argv}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_a3c04138a5bfe5d72780bb7e82a18e627}
+
+
+\-Definition at line 28 of file cacatalk.\-c.
+
+
+
+\-References change\-\_\-video\-\_\-device(), chat(), close\-\_\-video\-\_\-stream(), connect\-\_\-to\-\_\-peer\-\_\-socket(), display\-\_\-menu(), options\-\_\-s\-::driver\-\_\-choice, options\-\_\-s\-::driver\-\_\-options, \-E\-R\-R\-O\-R\-\_\-\-E\-X\-I\-T, get\-\_\-options(), \-L\-I\-S\-T\-E\-N\-\_\-\-Q\-U\-E\-U\-E\-\_\-\-S\-I\-Z\-E, \-N\-U\-M\-\_\-\-T\-H\-R\-E\-A\-D\-S, options\-\_\-s\-::peer\-\_\-name, \-P\-O\-R\-T\-\_\-\-C\-H\-A\-T, \-P\-O\-R\-T\-\_\-\-V\-I\-D\-E\-O, video\-\_\-out\-\_\-args\-\_\-s\-::quit, send\-\_\-video\-\_\-thread(), set\-\_\-non\-\_\-block(), set\-\_\-peer\-\_\-address(), set\-\_\-video(), set\-\_\-window(), \-S\-O\-C\-K\-A\-D\-D\-R, video\-\_\-out\-\_\-args\-\_\-s\-::socketfd, turn\-\_\-video\-\_\-stream\-\_\-off(), video\-\_\-out\-\_\-args\-\_\-s\-::vid\-\_\-params, options\-\_\-s\-::video\-\_\-device\-\_\-name, and video\-\_\-out\-\_\-args\-\_\-s\-::win.
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_a8892179bee3356c0c6399983fa614ba5}{\index{cacatalk.\-c@{cacatalk.\-c}!send\-\_\-video\-\_\-thread@{send\-\_\-video\-\_\-thread}}
+\index{send\-\_\-video\-\_\-thread@{send\-\_\-video\-\_\-thread}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{send\-\_\-video\-\_\-thread}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ {\bf send\-\_\-video\-\_\-thread} (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{arguments}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_a8892179bee3356c0c6399983fa614ba5}
+
+
+\-This thread grabs video frames from the local host video device and send it in the caca format to the connected peer. 
+
+
+
+\-Definition at line 1354 of file cacatalk.\-c.
+
+
+
+\-References video\-\_\-params\-\_\-s\-::buf, video\-\_\-params\-\_\-s\-::buffers, video\-\_\-params\-\_\-s\-::caca\-\_\-brightness, video\-\_\-params\-\_\-s\-::caca\-\_\-contrast, video\-\_\-params\-\_\-s\-::caca\-\_\-dither, video\-\_\-params\-\_\-s\-::caca\-\_\-format, video\-\_\-params\-\_\-s\-::caca\-\_\-gamma, \-C\-L\-E\-A\-R, \-\_\-window\-::cols, video\-\_\-params\-\_\-s\-::cv\-\_\-cols, video\-\_\-params\-\_\-s\-::cv\-\_\-rows, image\-::dither, video\-\_\-params\-\_\-s\-::fmt, video\-\_\-params\-\_\-s\-::is\-\_\-ok, video\-\_\-params\-\_\-s\-::is\-\_\-on, load\-\_\-image\-\_\-from\-\_\-\-V4\-L\-\_\-buffer(), \-M\-A\-X\-F\-D, video\-\_\-params\-\_\-s\-::memory, image\-::pixels, video\-\_\-out\-\_\-args\-\_\-s\-::quit, \-\_\-window\-::rows, video\-\_\-out\-\_\-args\-\_\-s\-::socketfd, video\-\_\-params\-\_\-s\-::type, unload\-\_\-image(), video\-\_\-params\-\_\-s\-::v4l\-\_\-fd, video\-\_\-out\-\_\-args\-\_\-s\-::vid\-\_\-params, video\-\_\-out\-\_\-args\-\_\-s\-::win, and xioctl().
+
+
+
+\-Referenced by main().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_aa9c547c41b5d5fee785dcbb42d9685de}{\index{cacatalk.\-c@{cacatalk.\-c}!set\-\_\-peer\-\_\-address@{set\-\_\-peer\-\_\-address}}
+\index{set\-\_\-peer\-\_\-address@{set\-\_\-peer\-\_\-address}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{set\-\_\-peer\-\_\-address}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf set\-\_\-peer\-\_\-address} (
+\begin{DoxyParamCaption}
+\item[{caca\-\_\-canvas\-\_\-t $\ast$}]{cv, }
+\item[{caca\-\_\-display\-\_\-t $\ast$}]{dp, }
+\item[{{\bf options} $\ast$}]{opts}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_aa9c547c41b5d5fee785dcbb42d9685de}
+
+
+\-Sets an \-I\-P address or hostname to the peer to establish connection with. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em cv} & \-A pointer to the caca canvas \\
+\hline
+{\em dp} & \-A pointer to the caca display \\
+\hline
+{\em opts} & \-The current argument options structure into which the new hostname or \-I\-P address will be saved \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 894 of file cacatalk.\-c.
+
+
+
+\-References textentry\-::buffer, \-B\-U\-F\-F\-E\-R\-\_\-\-S\-I\-Z\-E, textentry\-::changed, textentry\-::cursor, options\-\_\-s\-::peer\-\_\-name, and textentry\-::size.
+
+
+
+\-Referenced by main().
+
+\hypertarget{cacatalk_8c_af94b7f7637d9f1d5d6338bdb13cdbfbb}{\index{cacatalk.\-c@{cacatalk.\-c}!set\-\_\-video@{set\-\_\-video}}
+\index{set\-\_\-video@{set\-\_\-video}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{set\-\_\-video}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf set\-\_\-video} (
+\begin{DoxyParamCaption}
+\item[{{\bf video\-\_\-params} $\ast$}]{vid\-\_\-params, }
+\item[{char $\ast$}]{dev\-\_\-name, }
+\item[{{\bf \-Window} $\ast$}]{win, }
+\item[{int}]{img\-\_\-width, }
+\item[{int}]{img\-\_\-height}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_af94b7f7637d9f1d5d6338bdb13cdbfbb}
+
+
+\-Sets the video device using the \-V4\-L2 driver. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em vid\-\_\-params} & \-A pointer to the parameters structure for the video device to which the request will be made to. \\
+\hline
+{\em dev\-\_\-name} & \-The path to the video device name (e.\-g. /dev/video0) \\
+\hline
+{\em win} & \-A pointer to the window parameters structure to be passed as setting video \\
+\hline
+{\em img\-\_\-width} & \-The video frame width in pixels \\
+\hline
+{\em img\-\_\-height} & \-The video frame heigh in pixels\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{\-Returns}
+the video device file descriptor (greater than -\/1 if video was set/open successfully) 
+\end{DoxyReturn}
+
+
+\-Definition at line 791 of file cacatalk.\-c.
+
+
+
+\-References video\-\_\-params\-\_\-s\-::aspect\-\_\-ratio, video\-\_\-params\-\_\-s\-::buf, video\-\_\-params\-\_\-s\-::buffers, video\-\_\-params\-\_\-s\-::caca\-\_\-brightness, video\-\_\-params\-\_\-s\-::caca\-\_\-contrast, video\-\_\-params\-\_\-s\-::caca\-\_\-dither, \-\_\-window\-::caca\-\_\-format, video\-\_\-params\-\_\-s\-::caca\-\_\-format, video\-\_\-params\-\_\-s\-::caca\-\_\-gamma, \-C\-L\-E\-A\-R, video\-\_\-params\-\_\-s\-::cv\-\_\-cols, video\-\_\-params\-\_\-s\-::cv\-\_\-rows, video\-\_\-params\-\_\-s\-::dev\-\_\-name, video\-\_\-params\-\_\-s\-::fmt, video\-\_\-params\-\_\-s\-::img\-\_\-height, video\-\_\-params\-\_\-s\-::img\-\_\-width, video\-\_\-params\-\_\-s\-::is\-\_\-ok, video\-\_\-params\-\_\-s\-::is\-\_\-on, buffer\-::length, video\-\_\-params\-\_\-s\-::memory, video\-\_\-params\-\_\-s\-::number\-\_\-of\-\_\-buffers, video\-\_\-params\-\_\-s\-::req, buffer\-::start, turn\-\_\-video\-\_\-stream\-\_\-on(), video\-\_\-params\-\_\-s\-::type, video\-\_\-params\-\_\-s\-::v4l\-\_\-fd, \-\_\-window\-::video\-\_\-lines, and xioctl().
+
+
+
+\-Referenced by change\-\_\-video\-\_\-device(), and main().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_af0452d042b6a50caa5d9b6b68fbae643}{\index{cacatalk.\-c@{cacatalk.\-c}!set\-\_\-window@{set\-\_\-window}}
+\index{set\-\_\-window@{set\-\_\-window}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{set\-\_\-window}]{\setlength{\rightskip}{0pt plus 5cm}void {\bf set\-\_\-window} (
+\begin{DoxyParamCaption}
+\item[{int}]{fd, }
+\item[{unsigned short}]{video\-\_\-lines, }
+\item[{{\bf \-Window} $\ast$}]{win, }
+\item[{caca\-\_\-canvas\-\_\-t $\ast$}]{cv}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_af0452d042b6a50caa5d9b6b68fbae643}
+
+
+\-Fills structure with current window dimensions. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em fd} & \-A file descriptor number related to the terminal (usually \-S\-T\-D\-I\-N\-\_\-\-F\-I\-L\-E\-N\-O) \\
+\hline
+{\em video\-\_\-lines} & \-The number of rows (lines) used for the video area on the canvas \\
+\hline
+{\em win} & \-A pointer to our custom \-Window element to which information will be assigned \\
+\hline
+{\em cv} & \-A pointer to the caca canvas for which we will identify dimensions of. \\
+\hline
+\end{DoxyParams}
+
+
+\-Definition at line 1268 of file cacatalk.\-c.
+
+
+
+\-References \-\_\-window\-::caca\-\_\-format, \-\_\-window\-::cols, \-\_\-window\-::rows, \-\_\-window\-::video\-\_\-cols, and \-\_\-window\-::video\-\_\-lines.
+
+
+
+\-Referenced by main().
+
+\hypertarget{cacatalk_8c_ad62dc32c9a10f83df0e82acc91047cf4}{\index{cacatalk.\-c@{cacatalk.\-c}!turn\-\_\-video\-\_\-stream\-\_\-off@{turn\-\_\-video\-\_\-stream\-\_\-off}}
+\index{turn\-\_\-video\-\_\-stream\-\_\-off@{turn\-\_\-video\-\_\-stream\-\_\-off}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{turn\-\_\-video\-\_\-stream\-\_\-off}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf turn\-\_\-video\-\_\-stream\-\_\-off} (
+\begin{DoxyParamCaption}
+\item[{{\bf video\-\_\-params} $\ast$}]{vid\-\_\-params}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_ad62dc32c9a10f83df0e82acc91047cf4}
+
+
+\-Attempts to turn the video stream off and sets the related indicated flag in the passed structure. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em vid\-\_\-params} & \-A pointer to the parameters structure for the video device to which the request will be made to.\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyRetVals}{\-Return values}
+{\em 0} & if the turning off streaming request was set successfully \\
+\hline
+{\em -\/1} & if the streaming request did not succeed. \\
+\hline
+\end{DoxyRetVals}
+
+
+\-Definition at line 1221 of file cacatalk.\-c.
+
+
+
+\-References video\-\_\-params\-\_\-s\-::is\-\_\-ok, video\-\_\-params\-\_\-s\-::is\-\_\-on, video\-\_\-params\-\_\-s\-::type, video\-\_\-params\-\_\-s\-::v4l\-\_\-fd, and xioctl().
+
+
+
+\-Referenced by chat(), close\-\_\-video\-\_\-stream(), and main().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_a3600698b52c926004b0546164aef62ca}{\index{cacatalk.\-c@{cacatalk.\-c}!turn\-\_\-video\-\_\-stream\-\_\-on@{turn\-\_\-video\-\_\-stream\-\_\-on}}
+\index{turn\-\_\-video\-\_\-stream\-\_\-on@{turn\-\_\-video\-\_\-stream\-\_\-on}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{turn\-\_\-video\-\_\-stream\-\_\-on}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf turn\-\_\-video\-\_\-stream\-\_\-on} (
+\begin{DoxyParamCaption}
+\item[{{\bf video\-\_\-params} $\ast$}]{vid\-\_\-params}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_a3600698b52c926004b0546164aef62ca}
+
+
+\-Attempts to turn the video stream on and sets the related indicated flag in the passed structure. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em vid\-\_\-params} & \-A pointer to the parameters structure for the video device to which the request will be made to.\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyRetVals}{\-Return values}
+{\em 1} & if the streaming request was set successfully \\
+\hline
+{\em 0} & if the streaming request did not succeed, so the stream is off. \\
+\hline
+\end{DoxyRetVals}
+
+
+\-Definition at line 1207 of file cacatalk.\-c.
+
+
+
+\-References video\-\_\-params\-\_\-s\-::is\-\_\-ok, video\-\_\-params\-\_\-s\-::is\-\_\-on, video\-\_\-params\-\_\-s\-::type, video\-\_\-params\-\_\-s\-::v4l\-\_\-fd, and xioctl().
+
+
+
+\-Referenced by chat(), and set\-\_\-video().
+
+
+
+\-Here is the call graph for this function\-:
+
+
+\hypertarget{cacatalk_8c_a22cce36344ad43e1d0742f8af3ba7296}{\index{cacatalk.\-c@{cacatalk.\-c}!xioctl@{xioctl}}
+\index{xioctl@{xioctl}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{xioctl}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf xioctl} (
+\begin{DoxyParamCaption}
+\item[{int}]{fd, }
+\item[{int}]{request, }
+\item[{void $\ast$}]{arg}
+\end{DoxyParamCaption}
+)}}\label{cacatalk_8c_a22cce36344ad43e1d0742f8af3ba7296}
+
+
+\-It persistently calls the v4l2\-\_\-ioctl() function to program the \-V4\-L2 device. 
+
+
+\begin{DoxyParams}{\-Parameters}
+{\em fd} & \-An open file descriptor. \\
+\hline
+{\em request} & \-The encoded request indicating how to program the device (e.\-g. \-V\-I\-D\-I\-O\-C\-\_\-\-S\-T\-R\-E\-A\-M\-O\-N, \-V\-I\-D\-I\-O\-C\-\_\-\-S\-\_\-\-F\-M\-T, etc.) \-Macros and defines specifying \-V4\-L2 ioctl requests are located in the videodev2.\-h header file \\
+\hline
+{\em arg} & \-The appropriate arguments (or pointer to a struct, e.\-g. v4l2\-\_\-requestbuffers) related to the request at hand.\\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyRetVals}{\-Return values}
+{\em 0} & request set successfully \\
+\hline
+{\em -\/1} & on error. \-Also, the errno variable is set appropriately \\
+\hline
+\end{DoxyRetVals}
+
+
+\-Definition at line 1249 of file cacatalk.\-c.
+
+
+
+\-Referenced by send\-\_\-video\-\_\-thread(), set\-\_\-video(), turn\-\_\-video\-\_\-stream\-\_\-off(), and turn\-\_\-video\-\_\-stream\-\_\-on().
+
+
+
+\subsection{\-Variable \-Documentation}
+\hypertarget{cacatalk_8c_a58a896d0c5a5714ee4364a0e183f68fe}{\index{cacatalk.\-c@{cacatalk.\-c}!g\-\_\-video\-\_\-out@{g\-\_\-video\-\_\-out}}
+\index{g\-\_\-video\-\_\-out@{g\-\_\-video\-\_\-out}!cacatalk.c@{cacatalk.\-c}}
+\subsubsection[{g\-\_\-video\-\_\-out}]{\setlength{\rightskip}{0pt plus 5cm}{\bf video\-\_\-out\-\_\-args} {\bf g\-\_\-video\-\_\-out}}}\label{cacatalk_8c_a58a896d0c5a5714ee4364a0e183f68fe}
+
+
+\-Definition at line 26 of file cacatalk.\-c.
+

@@ -1,0 +1,50 @@
+.TH "buffer" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+buffer \- 
+.PP
+A buffer place holder to be used with video streaming buffers given by the v4l device\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <common_image\&.h>\fP
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "void * \fBstart\fP"
+.br
+.RI "\fIIndicates where the buffer begins in memory\&. \fP"
+.ti -1c
+.RI "size_t \fBlength\fP"
+.br
+.RI "\fIIndicates the size of the buffer\&. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+A buffer place holder to be used with video streaming buffers given by the v4l device\&. 
+.PP
+Definition at line 23 of file common_image\&.h\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "size_t \fBbuffer::length\fP"
+.PP
+Indicates the size of the buffer\&. 
+.PP
+Definition at line 26 of file common_image\&.h\&.
+.PP
+Referenced by close_video_stream(), and set_video()\&.
+.SS "void* \fBbuffer::start\fP"
+.PP
+Indicates where the buffer begins in memory\&. 
+.PP
+Definition at line 25 of file common_image\&.h\&.
+.PP
+Referenced by close_video_stream(), load_image_from_V4L_buffer(), and set_video()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

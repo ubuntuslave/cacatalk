@@ -1,0 +1,48 @@
+digraph G
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="main",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="solid"];
+  Node2 [label="change_video_device",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#a14b37c9f12a52944998c3e88a64a574c",tooltip="Changes or sets the video device to be used with cacatalk."];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="solid"];
+  Node3 [label="set_video",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#af94b7f7637d9f1d5d6338bdb13cdbfbb",tooltip="Sets the video device using the V4L2 driver."];
+  Node3 -> Node4 [color="midnightblue",fontsize="10",style="solid"];
+  Node4 [label="xioctl",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#a22cce36344ad43e1d0742f8af3ba7296",tooltip="It persistently calls the v4l2_ioctl() function to program the V4L2 device."];
+  Node3 -> Node5 [color="midnightblue",fontsize="10",style="solid"];
+  Node5 [label="turn_video_stream_on",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#a3600698b52c926004b0546164aef62ca",tooltip="Attempts to turn the video stream on and sets the related indicated flag in the passed structure..."];
+  Node5 -> Node4 [color="midnightblue",fontsize="10",style="solid"];
+  Node1 -> Node6 [color="midnightblue",fontsize="10",style="solid"];
+  Node6 [label="chat",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#afb3b236599a47f68e858b33e30efc8a7",tooltip="This is the main chatroom environment where text data is sent/received via a single text socket..."];
+  Node6 -> Node7 [color="midnightblue",fontsize="10",style="solid"];
+  Node7 [label="turn_video_stream_off",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#ad62dc32c9a10f83df0e82acc91047cf4",tooltip="Attempts to turn the video stream off and sets the related indicated flag in the passed structure..."];
+  Node7 -> Node4 [color="midnightblue",fontsize="10",style="solid"];
+  Node6 -> Node5 [color="midnightblue",fontsize="10",style="solid"];
+  Node1 -> Node8 [color="midnightblue",fontsize="10",style="solid"];
+  Node8 [label="close_video_stream",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#a70a5caba7bafd8729a9fcf5c3d35f802",tooltip="Stop streaming video and close V4L video device."];
+  Node8 -> Node7 [color="midnightblue",fontsize="10",style="solid"];
+  Node1 -> Node9 [color="midnightblue",fontsize="10",style="solid"];
+  Node9 [label="connect_to_peer_socket",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$caca__socket_8c.html#a1ab204b840c5e05cb3112dd59315a782"];
+  Node1 -> Node10 [color="midnightblue",fontsize="10",style="solid"];
+  Node10 [label="display_menu",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#ab0867c19bcdc2d3ad6c0896ffea47c9d",tooltip="It draws the main menu indicating posible options tied to keyboard commands."];
+  Node1 -> Node11 [color="midnightblue",fontsize="10",style="solid"];
+  Node11 [label="get_options",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#a2a6fc9780a5006f0e7f7a3cac5b852dd",tooltip="Parses command-line options and corresponding arguments using the getopt() function found in the unis..."];
+  Node11 -> Node12 [color="midnightblue",fontsize="10",style="solid"];
+  Node12 [label="get_IP_addresses",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$caca__socket_8c.html#a8bf72939eebda854c12d4afdb110bd45",tooltip="Resolves all the network interfaces and prints addresses to standard output (if desired) In fact..."];
+  Node1 -> Node13 [color="midnightblue",fontsize="10",style="solid"];
+  Node13 [label="send_video_thread",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#a8892179bee3356c0c6399983fa614ba5",tooltip="This thread grabs video frames from the local host video device and send it in the caca format to the..."];
+  Node13 -> Node4 [color="midnightblue",fontsize="10",style="solid"];
+  Node13 -> Node14 [color="midnightblue",fontsize="10",style="solid"];
+  Node14 [label="load_image_from_V4L_buffer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$common__image_8c.html#adf1231faaff08a2dc8ac048216d75b6a",tooltip="It loads an image from the v4l buffer."];
+  Node13 -> Node15 [color="midnightblue",fontsize="10",style="solid"];
+  Node15 [label="unload_image",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$common__image_8c.html#af662e66aa73bcb3e403280bc11745dc1",tooltip="It unloads the image from the v4l memory buffer."];
+  Node1 -> Node16 [color="midnightblue",fontsize="10",style="solid"];
+  Node16 [label="set_non_block",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$caca__socket_8c.html#ae02d2b25cdccbafa8aa0e18f2fba04a8"];
+  Node1 -> Node17 [color="midnightblue",fontsize="10",style="solid"];
+  Node17 [label="set_peer_address",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#aa9c547c41b5d5fee785dcbb42d9685de",tooltip="Sets an IP address or hostname to the peer to establish connection with."];
+  Node1 -> Node3 [color="midnightblue",fontsize="10",style="solid"];
+  Node1 -> Node18 [color="midnightblue",fontsize="10",style="solid"];
+  Node18 [label="set_window",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$cacatalk_8c.html#af0452d042b6a50caa5d9b6b68fbae643",tooltip="Fills structure with current window dimensions."];
+  Node1 -> Node7 [color="midnightblue",fontsize="10",style="solid"];
+}

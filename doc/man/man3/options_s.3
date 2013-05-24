@@ -1,0 +1,83 @@
+.TH "options_s" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+options_s \- 
+.PP
+This structure stores the argument options needed across the program\&. It will be called from a few different places if modification/setting of an member argument is needed\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <cacatalk\&.h>\fP
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "char \fBvideo_device_name\fP [\fBBUFFER_SIZE\fP]"
+.br
+.RI "\fIThe video device name\&. \fP"
+.ti -1c
+.RI "char \fBpeer_name\fP [MAXHOSTNAMELEN]"
+.br
+.RI "\fIThe IP address or hostname of the peer to connect to\&. \fP"
+.ti -1c
+.RI "char \fBhost_IPv4\fP [MAXHOSTNAMELEN]"
+.br
+.RI "\fIThe IP address for the local host\&. \fP"
+.ti -1c
+.RI "const char * \fBdriver_options\fP [7]"
+.br
+.RI "\fIA list of strings for caca display driver options\&. \fP"
+.ti -1c
+.RI "unsigned int \fBdriver_choice\fP"
+.br
+.RI "\fITo choose an index from the array of drivers options\&. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+This structure stores the argument options needed across the program\&. It will be called from a few different places if modification/setting of an member argument is needed\&. 
+.PP
+Definition at line 105 of file cacatalk\&.h\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "unsigned int \fBoptions_s::driver_choice\fP"
+.PP
+To choose an index from the array of drivers options\&. 
+.PP
+Definition at line 111 of file cacatalk\&.h\&.
+.PP
+Referenced by get_options(), and main()\&.
+.SS "const char* \fBoptions_s::driver_options\fP[7]"
+.PP
+A list of strings for caca display driver options\&. 
+.PP
+Definition at line 110 of file cacatalk\&.h\&.
+.PP
+Referenced by get_options(), and main()\&.
+.SS "char \fBoptions_s::host_IPv4\fP[MAXHOSTNAMELEN]"
+.PP
+The IP address for the local host\&. 
+.PP
+Definition at line 109 of file cacatalk\&.h\&.
+.PP
+Referenced by display_menu(), and get_options()\&.
+.SS "char \fBoptions_s::peer_name\fP[MAXHOSTNAMELEN]"
+.PP
+The IP address or hostname of the peer to connect to\&. 
+.PP
+Definition at line 108 of file cacatalk\&.h\&.
+.PP
+Referenced by display_menu(), get_options(), main(), and set_peer_address()\&.
+.SS "char \fBoptions_s::video_device_name\fP[\fBBUFFER_SIZE\fP]"
+.PP
+The video device name\&. 
+.PP
+Definition at line 107 of file cacatalk\&.h\&.
+.PP
+Referenced by change_video_device(), display_menu(), get_options(), and main()\&.
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.

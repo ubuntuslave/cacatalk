@@ -1,0 +1,249 @@
+.TH "include/caca_socket.h" 3 "Fri May 24 2013" "Version 1.0" "CACAtalk" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+include/caca_socket.h \- 
+.PP
+The caca_socket implementation file for cacatalk connections to a listening peer\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <stdio\&.h>\fP
+.br
+\fC#include <unistd\&.h>\fP
+.br
+\fC#include <string\&.h>\fP
+.br
+\fC#include <stdlib\&.h>\fP
+.br
+\fC#include <fcntl\&.h>\fP
+.br
+\fC#include <sys/types\&.h>\fP
+.br
+\fC#include <sys/socket\&.h>\fP
+.br
+\fC#include <netinet/in\&.h>\fP
+.br
+\fC#include <arpa/inet\&.h>\fP
+.br
+\fC#include <netdb\&.h>\fP
+.br
+\fC#include <ctype\&.h>\fP
+.br
+\fC#include <signal\&.h>\fP
+.br
+\fC#include <errno\&.h>\fP
+.br
+
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fB_GNU_SOURCE\fP"
+.br
+.ti -1c
+.RI "#define \fBSOCKADDR\fP   (struct sockaddr*)"
+.br
+.ti -1c
+.RI "#define \fBSIZE\fP   sizeof(struct sockaddr_in)"
+.br
+.ti -1c
+.RI "#define \fBDEFAULT_HOST\fP   'eniac\&.geo\&.hunter\&.cuny\&.edu'"
+.br
+.ti -1c
+.RI "#define \fBPORT_CHAT\fP   25666"
+.br
+.ti -1c
+.RI "#define \fBPORT_VIDEO\fP   25667"
+.br
+.ti -1c
+.RI "#define \fBERROR_EXIT\fP(_mssg, _num)   perror(_mssg);exit(_num);"
+.br
+.ti -1c
+.RI "#define \fBMAXLINE\fP   4096"
+.br
+.ti -1c
+.RI "#define \fBLISTEN_QUEUE_SIZE\fP   5"
+.br
+.ti -1c
+.RI "#define \fBMAXFD\fP(_x, _y)   ((_x)>(_y)?(_x):(_y))"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef void \fBSigfunc\fP (int)"
+.br
+.RI "\fIThe following typedef simplifies the function definition after it\&. \fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBset_non_block\fP (int fd)"
+.br
+.ti -1c
+.RI "int \fBconnect_to_peer_socket\fP (const char *peer_hostname, struct sockaddr_in *server, in_port_t port)"
+.br
+.ti -1c
+.RI "int \fBinet_connect\fP (const char *host, const char *service, int type)"
+.br
+.RI "\fICreate socket and connect it to the address specified by 'host' + 'service'/'type'\&. \fP"
+.ti -1c
+.RI "void \fBget_IP_addresses\fP (char *presentation_addr, int print)"
+.br
+.RI "\fIResolves all the network interfaces and prints addresses to standard output (if desired) In fact, it provides the IPv4 presentation address for the local host\&. \fP"
+.ti -1c
+.RI "\fBSigfunc\fP * \fBSignal\fP (int signo, \fBSigfunc\fP *func)"
+.br
+.RI "\fIoverride existing signal function to handle non-BSD systems \fP"
+.ti -1c
+.RI "void \fBon_sigchld\fP (int signo)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The caca_socket implementation file for cacatalk connections to a listening peer\&. 
+
+The caca_socket public header based on sockets usef by  \&.
+.PP
+\fBAuthor:\fP
+.RS 4
+Carlos Jaramillo <cjaramillo@gc.cuny.edu> Course : CS 82010 UNIX Application Development (Spring 2013) Created on : May 24, 2013 Description : A very simple video and text chat interface (peer-to-peer (non centralized)) based on libcaca License : ​Do What The Fuck You Want To Public License (WTFPL) 
+.RE
+.PP
+
+.PP
+Definition in file \fBcaca_socket\&.h\fP\&.
+.SH "Define Documentation"
+.PP 
+.SS "#define \fB_GNU_SOURCE\fP"
+.PP
+Definition at line 19 of file caca_socket\&.h\&.
+.SS "#define \fBDEFAULT_HOST\fP   'eniac\&.geo\&.hunter\&.cuny\&.edu'"
+.PP
+Definition at line 31 of file caca_socket\&.h\&.
+.SS "#define \fBERROR_EXIT\fP(_mssg, _num)   perror(_mssg);exit(_num);"
+.PP
+Definition at line 34 of file caca_socket\&.h\&.
+.PP
+Referenced by connect_to_peer_socket(), and main()\&.
+.SS "#define \fBLISTEN_QUEUE_SIZE\fP   5"
+.PP
+Definition at line 36 of file caca_socket\&.h\&.
+.PP
+Referenced by main()\&.
+.SS "#define \fBMAXFD\fP(_x, _y)   ((_x)>(_y)?(_x):(_y))"
+.PP
+Definition at line 37 of file caca_socket\&.h\&.
+.PP
+Referenced by chat(), and send_video_thread()\&.
+.SS "#define \fBMAXLINE\fP   4096"
+.PP
+Definition at line 35 of file caca_socket\&.h\&.
+.PP
+Referenced by chat(), and connect_to_peer_socket()\&.
+.SS "#define \fBPORT_CHAT\fP   25666"
+.PP
+Definition at line 32 of file caca_socket\&.h\&.
+.PP
+Referenced by main()\&.
+.SS "#define \fBPORT_VIDEO\fP   25667"
+.PP
+Definition at line 33 of file caca_socket\&.h\&.
+.PP
+Referenced by main()\&.
+.SS "#define \fBSIZE\fP   sizeof(struct sockaddr_in)"
+.PP
+Definition at line 30 of file caca_socket\&.h\&.
+.PP
+Referenced by connect_to_peer_socket()\&.
+.SS "#define \fBSOCKADDR\fP   (struct sockaddr*)"
+.PP
+Definition at line 29 of file caca_socket\&.h\&.
+.PP
+Referenced by connect_to_peer_socket(), and main()\&.
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef void \fBSigfunc\fP(int)"
+.PP
+The following typedef simplifies the function definition after it\&. 
+.PP
+Definition at line 73 of file caca_socket\&.h\&.
+.SH "Function Documentation"
+.PP 
+.SS "int \fBconnect_to_peer_socket\fP (const char *peer_hostname, struct sockaddr_in *server, in_port_tport)"TODO: description
+.PP
+\fBParameters:\fP
+.RS 4
+\fIpeer_hostname\fP The IP address or hostname as a human readable character string 
+.br
+\fIserver\fP The socket address structure to be realized based on the connection to the peer_hostname 
+.br
+\fIport\fP The port number to connect to (assumes the other side is listening)
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+socket file descriptor number\&. Or -1 if not connected\&. 
+.RE
+.PP
+
+.PP
+Definition at line 57 of file caca_socket\&.c\&.
+.PP
+References ERROR_EXIT, MAXLINE, SIZE, and SOCKADDR\&.
+.PP
+Referenced by main()\&.
+.SS "void \fBget_IP_addresses\fP (char *presentation_addr, intprint)"
+.PP
+Resolves all the network interfaces and prints addresses to standard output (if desired) In fact, it provides the IPv4 presentation address for the local host\&. \fBParameters:\fP
+.RS 4
+\fIpresentation_addr\fP The presentation address in IPv4 format (dotted decimal) 
+.br
+\fIprint\fP 1: prints all addresses to standard output\&. Or not (0: default) 
+.RE
+.PP
+
+.PP
+Definition at line 19 of file caca_socket\&.c\&.
+.PP
+Referenced by get_options()\&.
+.SS "int \fBinet_connect\fP (const char *host, const char *service, inttype)"
+.PP
+Create socket and connect it to the address specified by 'host' + 'service'/'type'\&. \fBNote:\fP
+.RS 4
+Function based on Michael Kerrisk's source code for his book 'The Linux Programming Interface'
+.RE
+.PP
+\fBParameters:\fP
+.RS 4
+\fIhost\fP NULL for loopback IP address, or a host name or numeric IP address 
+.br
+\fIservice\fP either a name or a port number 
+.br
+\fItype\fP either SOCK_STREAM or SOCK_DGRAM
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+socket descriptor on success, or -1 on error 
+.RE
+.PP
+
+.PP
+Definition at line 109 of file caca_socket\&.c\&.
+.SS "void \fBon_sigchld\fP (intsigno)"
+.SS "void \fBset_non_block\fP (intfd)"
+.PP
+Definition at line 151 of file caca_socket\&.c\&.
+.PP
+Referenced by main()\&.
+.SS "\fBSigfunc\fP* \fBSignal\fP (intsigno, \fBSigfunc\fP *func)"
+.PP
+override existing signal function to handle non-BSD systems 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for CACAtalk from the source code\&.
