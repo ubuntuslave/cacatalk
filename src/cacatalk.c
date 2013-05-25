@@ -403,19 +403,6 @@ void display_menu(caca_canvas_t *cv, options * arg_opts)
 
 }
 
-/* TODO:
- int set_peer_address(caca_canvas_t *cv, caca_display_t *dp, char * peer_hostname)
- {
- caca_set_color_ansi(cv, CACA_LIGHTGRAY, CACA_BLACK);
- caca_clear_canvas(cv);
- caca_draw_thin_box(cv, 1, 1, xo, yo);
-
- char *video_in_buffer = NULL;
- video_in_buffer = malloc(video_area);
- unsigned int new_recv_video_bytes = 0; // Indicates when the size of a new video frame
- }
- */
-
 int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window *win, char * peer_hostname)
 {
   int xo = caca_get_canvas_width(cv) - 2;
