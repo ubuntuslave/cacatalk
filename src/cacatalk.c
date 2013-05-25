@@ -507,8 +507,7 @@ int chat(caca_canvas_t *cv, caca_display_t *dp, int text_fd, int vid_fd, Window 
     entries_recv[i].changed = 1;
   }
 
-//  maxfd = MAXFD(fileno(stdin), vid_fd) + 1;
-  maxfd = MAXFD(fileno(stdin), 10) + 1;
+  maxfd = MAXFD(fileno(stdin), vid_fd) + 1;
 
   caca_set_color_ansi(cv, CACA_BLACK, CACA_LIGHTGRAY); // Reset background color
 
