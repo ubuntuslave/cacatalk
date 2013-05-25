@@ -7,52 +7,45 @@
  Description    : A very simple video and text chat interface (peer-to-peer (non centralized)) based on libcaca
  License        : ​Do What The Fuck You Want To Public License (WTFPL)
  Purpose        : To demonstrate some of the principles used to transfer data using sockets,
- a wrapper around ncurses (via libcaca), the use of the Linux Media Infrasture API (a.k.a.V4L2),
+ a wrapper around ncurses (via libcaca), the use of the Linux Media Infrasture API (a.k.a. V4L2),
  threads, and the pure awesomeness of CACA itself (Color AsCii Art).
- Usage          : cacatalk [options]
+
+ Usage          : cacatalk  [-p address] [-v video_device_path] [-d caca_driver_style(1-7)]
+
+ Options        :
+                 -p address     Sets the reachable peer as a dotted decimal IPv4 address or network resolvable hostname
+                 -v video_device_path  Sets the path to the video device (e.g /dev/video0)
+                 -d caca_driver_style  The argument value is a number from 1 to 7,
+                   and it allows to choose the environment of cacatalk,
+                   Possible values represent (1: Default, 2: ncurses terminal, 3: conio, 4: GL, 5: raw, 6: VGA, 7: slang)
+
  ---- See below for detailed usage instructions ---
  Build with     : make
 
  Status         : First release (Initial development), so code needs to be cleaned and bugs killed
  The following functionally exists for caca talking:
- 1) The user can enter the name of a file from the command line and if
- the file already exist, its contents will be loaded to the text buffer
- and presented on the screen. However, if the file doesn't already exist,
- it will be created.
- 2) In command mode, the user is now able to enter the 'x' command to delete a single character under the cursor.
- It gracefully handles deletion at end of lines by shifting up and merging lines. An extra case behavior
- is the deletion of a last empty line.
- 3) In command mode, the user is now able to enter the 'dd' command to delete the current line.
- 4) In input mode, when the user enters the backspace (delete in Mac) key,
- the character to the left of the cursor is removed from the screen and from the text buffer.
- NOTE: It is using keycode 127, as for 'delete' key in the Macintosh keyboard.
- 5) In last line mode, the allowed commands are:
- 'q': tries to quit, but if modifications exist, a prompt for saving the file is presented.
- 'w': performs an explicit write/save of contents to the file
- 'wq': it writes the current contents and the program quits.
- 'w filename': it allows the user to save the current contents as the desire filename
- (empty strings and initial spaces are stripped out of the name)
- 'q!': forces the program to quit without saving the last modifications.
- Escape: is now handle to allow for exiting the command mode if not valid commands are about to be passed.
- 6) The program gracefully handles when the text gets larger than the allocated buffer limit.
- The user is simply notified of the unfortunate incident. He/she may decide to save and quit
- by using their common sense.
- 7) Vertical scrolling is still dirty (not able to draw partial lines). Cursor UP/DOWN navigation
- still goes to the last line when moving to down to a line that wraps around!
- 8) Some minor bug fixes throughout (see code comments "Fixed by Carlos") in order to see differences
+ 1) 'cacatalk' can be run from the command line without arguments at all), and they could be set during runtime from the main menu.
+ 2) Video stream (if valid device has been open) can be toggle on/off during chat session by pressing 'Ctr+V'
+ 3) 'cacatalk' uses 2 stream sockets (bidirectional). The text (chat) socket operates on port 25666. The video stream socket uses
+ 25667. Both peers are listening on 25666, but whoever initiates the connection (by pressing 'c' in the main menu) becomes
+ the client who also starts listening on port 25667 for the peer to connect to. All this happens transparently.
 
+ \bugs There maybe issues at quiting a connection when the other peer is still transmitting video data (socket lingers)
 
- \Notes
- This program allows a user to create a file in a manner similar to vi.
- It has ony an insert and backspace command.
+ \todo
+ - Parametrize dimension values, such as video resolution (for now it's set statically to grab a 640x480 video),
+ and the produced caca image uses 16 lines (rows).
 
- Scrolling
- The program doesn't scroll (nor saves) ongoing text chats (also after leaving the chatroom)
+ -Scrolling
+ The program doesn't scroll (nor saves) ongoing text chats (also after leaving the chatroom).
+ Also, there are only 5 entries for send/receive text chat.
 
 
  Design
- The program has two main objects - a text buffer and a screen. The text buffer
- contains the actual text.
+ The program has two canvas:
+  1) a presentation canvas on which menus and the chat room are drawn. buffer and a screen. The text buffer.
+  2) a background canvas running on a thread that polls video and sends to the peer.
+
  ******************************************************************************/
 
 #ifndef CACATALK_H_

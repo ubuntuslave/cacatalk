@@ -103,154 +103,154 @@ This structure stores the video device parameters that are used for streaming vi
 .PP 
 This structure stores the video device parameters that are used for streaming video frames with V4L2\&. 
 .PP
-Definition at line 117 of file cacatalk\&.h\&.
+Definition at line 110 of file cacatalk\&.h\&.
 .SH "Member Data Documentation"
 .PP 
 .SS "float \fBvideo_params_s::aspect_ratio\fP"
 .PP
 Aspect ratio based to fit video in given number of columns in caca_canvas\&. 
 .PP
-Definition at line 137 of file cacatalk\&.h\&.
+Definition at line 130 of file cacatalk\&.h\&.
 .PP
 Referenced by set_video()\&.
 .SS "struct v4l2_buffer \fBvideo_params_s::buf\fP"
 .PP
 video buffer info 
 .PP
-Definition at line 126 of file cacatalk\&.h\&.
+Definition at line 119 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "struct \fBbuffer\fP* \fBvideo_params_s::buffers\fP"
 .PP
 array of memory buffer structure for video 
 .PP
-Definition at line 129 of file cacatalk\&.h\&.
+Definition at line 122 of file cacatalk\&.h\&.
 .PP
 Referenced by close_video_stream(), send_video_thread(), and set_video()\&.
 .SS "float \fBvideo_params_s::caca_brightness\fP"
 .PP
 Brightness (unset: to be implemented in the future) 
 .PP
-Definition at line 135 of file cacatalk\&.h\&.
+Definition at line 128 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "float \fBvideo_params_s::caca_contrast\fP"
 .PP
 Contrast (unset: to be implemented in the future) 
 .PP
-Definition at line 136 of file cacatalk\&.h\&.
+Definition at line 129 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "char* \fBvideo_params_s::caca_dither\fP"
 .PP
 Indicates the algorithm to be used for dithering with libcaca\&. 
 .PP
-Definition at line 133 of file cacatalk\&.h\&.
+Definition at line 126 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "char* \fBvideo_params_s::caca_format\fP"
 .PP
 preferred libcaca format (e\&.g\&. 'ansi') to export video (for transmission) 
 .PP
-Definition at line 132 of file cacatalk\&.h\&.
+Definition at line 125 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "float \fBvideo_params_s::caca_gamma\fP"
 .PP
 Gamma value (unset: to be implemented in the future) 
 .PP
-Definition at line 134 of file cacatalk\&.h\&.
+Definition at line 127 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "unsigned int \fBvideo_params_s::cv_cols\fP"
 .PP
 Number of columns to resolve video on caca _anvas\&. 
 .PP
-Definition at line 139 of file cacatalk\&.h\&.
+Definition at line 132 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "unsigned int \fBvideo_params_s::cv_rows\fP"
 .PP
 Number of rows to resolve video on caca _anvas\&. 
 .PP
-Definition at line 138 of file cacatalk\&.h\&.
+Definition at line 131 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "char \fBvideo_params_s::dev_name\fP[MAXPATHLEN]"
 .PP
 the path to the video device name 
 .PP
-Definition at line 121 of file cacatalk\&.h\&.
+Definition at line 114 of file cacatalk\&.h\&.
 .PP
 Referenced by set_video()\&.
 .SS "struct v4l2_format \fBvideo_params_s::fmt\fP"
 .PP
 v4l stream data format 
 .PP
-Definition at line 125 of file cacatalk\&.h\&.
+Definition at line 118 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "int \fBvideo_params_s::img_height\fP"
 .PP
 Video frame heigth\&. 
 .PP
-Definition at line 123 of file cacatalk\&.h\&.
+Definition at line 116 of file cacatalk\&.h\&.
 .PP
 Referenced by set_video()\&.
 .SS "int \fBvideo_params_s::img_width\fP"
 .PP
 Video frame width\&. 
 .PP
-Definition at line 122 of file cacatalk\&.h\&.
+Definition at line 115 of file cacatalk\&.h\&.
 .PP
 Referenced by set_video()\&.
 .SS "int \fBvideo_params_s::is_ok\fP"
 .PP
 1: Indicates when the video device is setup correctly\&. 0: is not okay 
 .PP
-Definition at line 119 of file cacatalk\&.h\&.
+Definition at line 112 of file cacatalk\&.h\&.
 .PP
 Referenced by change_video_device(), chat(), display_menu(), send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
 .SS "int \fBvideo_params_s::is_on\fP"
 .PP
 1: Indicates when the video device is streaming\&. 0: the video is not streaming\&. -1: status is undefined 
 .PP
-Definition at line 120 of file cacatalk\&.h\&.
+Definition at line 113 of file cacatalk\&.h\&.
 .PP
 Referenced by chat(), send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
 .SS "enum v4l2_memory \fBvideo_params_s::memory\fP"
 .PP
 Indicates the type of memory for v4l stream (e\&.g\&. V4L2_MEMORY_MMAP) 
 .PP
-Definition at line 131 of file cacatalk\&.h\&.
+Definition at line 124 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), and set_video()\&.
 .SS "unsigned int \fBvideo_params_s::number_of_buffers\fP"
 .PP
 The number of memory mapping buffers\&. 
 .PP
-Definition at line 128 of file cacatalk\&.h\&.
+Definition at line 121 of file cacatalk\&.h\&.
 .PP
 Referenced by close_video_stream(), and set_video()\&.
 .SS "struct v4l2_requestbuffers \fBvideo_params_s::req\fP"
 .PP
 v4l memory mapping buffers (cacatalk uses a double buffer) 
 .PP
-Definition at line 127 of file cacatalk\&.h\&.
+Definition at line 120 of file cacatalk\&.h\&.
 .PP
 Referenced by set_video()\&.
 .SS "enum v4l2_buf_type \fBvideo_params_s::type\fP"
 .PP
 Indicates the type of buffering (e\&.g\&. V4L2_BUF_TYPE_VIDEO_CAPTURE) 
 .PP
-Definition at line 130 of file cacatalk\&.h\&.
+Definition at line 123 of file cacatalk\&.h\&.
 .PP
 Referenced by send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
 .SS "int \fBvideo_params_s::v4l_fd\fP"
 .PP
 file despcriptor for the open video device 
 .PP
-Definition at line 124 of file cacatalk\&.h\&.
+Definition at line 117 of file cacatalk\&.h\&.
 .PP
 Referenced by close_video_stream(), send_video_thread(), set_video(), turn_video_stream_off(), and turn_video_stream_on()\&.
 

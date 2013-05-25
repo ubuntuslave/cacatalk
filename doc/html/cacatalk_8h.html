@@ -47,6 +47,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
+      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li class="current"><a href="files.html"><span>Files</span></a></li>
       <li>
@@ -169,11 +170,18 @@ Functions</h2></td></tr>
 </table>
 <hr/><a name="details" id="details"></a><h2>Detailed Description</h2>
 <div class="textblock"><p>The <em>cacatalk</em> public header. </p>
-<dl class="author"><dt><b>Author:</b></dt><dd>Carlos Jaramillo &lt;<a href="mailto:cjaramillo@gc.cuny.edu">cjaramillo@gc.cuny.edu</a>&gt; Course : CS 82010 UNIX Application Development (Spring 2013) Created on : May 24, 2013 Description : A very simple video and text chat interface (peer-to-peer (non centralized)) based on libcaca License : ​Do What The Fuck You Want To Public License (WTFPL) Purpose : To demonstrate some of the principles used to transfer data using sockets, a wrapper around ncurses (via libcaca), the use of the Linux Media Infrasture API (a.k.a.V4L2), threads, and the pure awesomeness of CACA itself (Color AsCii Art). Usage : cacatalk [options] ---- See below for detailed usage instructions --- Build with : make</dd></dl>
-<p>Status : First release (Initial development), so code needs to be cleaned and bugs killed The following functionally exists for caca talking: 1) The user can enter the name of a file from the command line and if the file already exist, its contents will be loaded to the text buffer and presented on the screen. However, if the file doesn't already exist, it will be created. 2) In command mode, the user is now able to enter the 'x' command to delete a single character under the cursor. It gracefully handles deletion at end of lines by shifting up and merging lines. An extra case behavior is the deletion of a last empty line. 3) In command mode, the user is now able to enter the 'dd' command to delete the current line. 4) In input mode, when the user enters the backspace (delete in Mac) key, the character to the left of the cursor is removed from the screen and from the text buffer. NOTE: It is using keycode 127, as for 'delete' key in the Macintosh keyboard. 5) In last line mode, the allowed commands are: 'q': tries to quit, but if modifications exist, a prompt for saving the file is presented. 'w': performs an explicit write/save of contents to the file 'wq': it writes the current contents and the program quits. 'w filename': it allows the user to save the current contents as the desire filename (empty strings and initial spaces are stripped out of the name) 'q!': forces the program to quit without saving the last modifications. Escape: is now handle to allow for exiting the command mode if not valid commands are about to be passed. 6) The program gracefully handles when the text gets larger than the allocated buffer limit. The user is simply notified of the unfortunate incident. He/she may decide to save and quit by using their common sense. 7) Vertical scrolling is still dirty (not able to draw partial lines). Cursor UP/DOWN navigation still goes to the last line when moving to down to a line that wraps around! 8) Some minor bug fixes throughout (see code comments "Fixed by Carlos") in order to see differences</p>
-<p>This program allows a user to create a file in a manner similar to vi. It has ony an insert and backspace command.</p>
-<p>Scrolling The program doesn't scroll (nor saves) ongoing text chats (also after leaving the chatroom)</p>
-<p>Design The program has two main objects - a text buffer and a screen. The text buffer contains the actual text. </p>
+<dl class="author"><dt><b>Author:</b></dt><dd>Carlos Jaramillo &lt;<a href="mailto:cjaramillo@gc.cuny.edu">cjaramillo@gc.cuny.edu</a>&gt; Course : CS 82010 UNIX Application Development (Spring 2013) Created on : May 24, 2013 Description : A very simple video and text chat interface (peer-to-peer (non centralized)) based on libcaca License : ​Do What The Fuck You Want To Public License (WTFPL) Purpose : To demonstrate some of the principles used to transfer data using sockets, a wrapper around ncurses (via libcaca), the use of the Linux Media Infrasture API (a.k.a. V4L2), threads, and the pure awesomeness of CACA itself (Color AsCii Art).</dd></dl>
+<p>Usage : cacatalk [-p address] [-v video_device_path] [-d caca_driver_style(1-7)]</p>
+<p>Options : -p address Sets the reachable peer as a dotted decimal IPv4 address or network resolvable hostname -v video_device_path Sets the path to the video device (e.g /dev/video0) -d caca_driver_style The argument value is a number from 1 to 7, and it allows to choose the environment of cacatalk, Possible values represent (1: Default, 2: ncurses terminal, 3: conio, 4: GL, 5: raw, 6: VGA, 7: slang)</p>
+<p>---- See below for detailed usage instructions --- Build with : make</p>
+<p>Status : First release (Initial development), so code needs to be cleaned and bugs killed The following functionally exists for caca talking: 1) 'cacatalk' can be run from the command line without arguments at all), and they could be set during runtime from the main menu. 2) Video stream (if valid device has been open) can be toggle on/off during chat session by pressing 'Ctr+V' 3) 'cacatalk' uses 2 stream sockets (bidirectional). The text (chat) socket operates on port 25666. The video stream socket uses 25667. Both peers are listening on 25666, but whoever initiates the connection (by pressing 'c' in the main menu) becomes the client who also starts listening on port 25667 for the peer to connect to. All this happens transparently.</p>
+<p>There maybe issues at quiting a connection when the other peer is still transmitting video data (socket lingers)</p>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000001">Todo:</a></b></dt><dd><ul>
+<li>Parametrize dimension values, such as video resolution (for now it's set statically to grab a 640x480 video), and the produced caca image uses 16 lines (rows).</li>
+</ul>
+</dd></dl>
+<p>-Scrolling The program doesn't scroll (nor saves) ongoing text chats (also after leaving the chatroom). Also, there are only 5 entries for send/receive text chat.</p>
+<p>Design The program has two canvas: 1) a presentation canvas on which menus and the chat room are drawn. buffer and a screen. The text buffer. 2) a background canvas running on a thread that polls video and sends to the peer. </p>
 
 <p>Definition in file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
 </div><hr/><h2>Define Documentation</h2>
@@ -188,7 +196,7 @@ Functions</h2></td></tr>
 </div>
 <div class="memdoc">
 
-<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00069">69</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
+<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00062">62</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l01036">change_video_device()</a>, <a class="el" href="cacatalk_8c_source.html#l00419">chat()</a>, and <a class="el" href="cacatalk_8c_source.html#l00894">set_peer_address()</a>.</p>
 
@@ -209,7 +217,7 @@ Functions</h2></td></tr>
 </div>
 <div class="memdoc">
 
-<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00068">68</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
+<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00061">61</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l01354">send_video_thread()</a>, and <a class="el" href="cacatalk_8c_source.html#l00791">set_video()</a>.</p>
 
@@ -226,7 +234,7 @@ Functions</h2></td></tr>
 </div>
 <div class="memdoc">
 
-<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00071">71</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
+<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00064">64</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -243,7 +251,7 @@ Functions</h2></td></tr>
 </div>
 <div class="memdoc">
 
-<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00070">70</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
+<p>Definition at line <a class="el" href="cacatalk_8h_source.html#l00063">63</a> of file <a class="el" href="cacatalk_8h_source.html">cacatalk.h</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00419">chat()</a>.</p>
 
@@ -397,7 +405,7 @@ Functions</h2></td></tr>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l01036">1036</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00078">textentry::buffer</a>, <a class="el" href="cacatalk_8h_source.html#l00069">BUFFER_SIZE</a>, <a class="el" href="cacatalk_8h_source.html#l00081">textentry::changed</a>, <a class="el" href="cacatalk_8h_source.html#l00080">textentry::cursor</a>, <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8c_source.html#l00791">set_video()</a>, <a class="el" href="cacatalk_8h_source.html#l00079">textentry::size</a>, and <a class="el" href="cacatalk_8h_source.html#l00107">options_s::video_device_name</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00071">textentry::buffer</a>, <a class="el" href="cacatalk_8h_source.html#l00062">BUFFER_SIZE</a>, <a class="el" href="cacatalk_8h_source.html#l00074">textentry::changed</a>, <a class="el" href="cacatalk_8h_source.html#l00073">textentry::cursor</a>, <a class="el" href="cacatalk_8h_source.html#l00112">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8c_source.html#l00791">set_video()</a>, <a class="el" href="cacatalk_8h_source.html#l00072">textentry::size</a>, and <a class="el" href="cacatalk_8h_source.html#l00100">options_s::video_device_name</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -478,7 +486,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l00419">419</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00078">textentry::buffer</a>, <a class="el" href="cacatalk_8h_source.html#l00069">BUFFER_SIZE</a>, <a class="el" href="cacatalk_8h_source.html#l00098">_window::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00081">textentry::changed</a>, <a class="el" href="cacatalk_8h_source.html#l00080">textentry::cursor</a>, <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00120">video_params_s::is_on</a>, <a class="el" href="caca__socket_8h_source.html#l00037">MAXFD</a>, <a class="el" href="caca__socket_8h_source.html#l00035">MAXLINE</a>, <a class="el" href="cacatalk_8h_source.html#l00079">textentry::size</a>, <a class="el" href="cacatalk_8h_source.html#l00070">TEXT_ENTRIES</a>, <a class="el" href="cacatalk_8c_source.html#l01221">turn_video_stream_off()</a>, <a class="el" href="cacatalk_8c_source.html#l01207">turn_video_stream_on()</a>, <a class="el" href="cacatalk_8h_source.html#l00149">video_out_args_s::vid_params</a>, <a class="el" href="cacatalk_8h_source.html#l00097">_window::video_cols</a>, and <a class="el" href="cacatalk_8h_source.html#l00096">_window::video_lines</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00071">textentry::buffer</a>, <a class="el" href="cacatalk_8h_source.html#l00062">BUFFER_SIZE</a>, <a class="el" href="cacatalk_8h_source.html#l00091">_window::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00074">textentry::changed</a>, <a class="el" href="cacatalk_8h_source.html#l00073">textentry::cursor</a>, <a class="el" href="cacatalk_8h_source.html#l00112">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00113">video_params_s::is_on</a>, <a class="el" href="caca__socket_8h_source.html#l00037">MAXFD</a>, <a class="el" href="caca__socket_8h_source.html#l00035">MAXLINE</a>, <a class="el" href="cacatalk_8h_source.html#l00072">textentry::size</a>, <a class="el" href="cacatalk_8h_source.html#l00063">TEXT_ENTRIES</a>, <a class="el" href="cacatalk_8c_source.html#l01221">turn_video_stream_off()</a>, <a class="el" href="cacatalk_8c_source.html#l01207">turn_video_stream_on()</a>, <a class="el" href="cacatalk_8h_source.html#l00142">video_out_args_s::vid_params</a>, <a class="el" href="cacatalk_8h_source.html#l00090">_window::video_cols</a>, and <a class="el" href="cacatalk_8h_source.html#l00089">_window::video_lines</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -518,7 +526,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l01235">1235</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00129">video_params_s::buffers</a>, <a class="el" href="common__image_8h_source.html#l00026">buffer::length</a>, <a class="el" href="cacatalk_8h_source.html#l00128">video_params_s::number_of_buffers</a>, <a class="el" href="common__image_8h_source.html#l00025">buffer::start</a>, <a class="el" href="cacatalk_8c_source.html#l01221">turn_video_stream_off()</a>, and <a class="el" href="cacatalk_8h_source.html#l00124">video_params_s::v4l_fd</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00122">video_params_s::buffers</a>, <a class="el" href="common__image_8h_source.html#l00026">buffer::length</a>, <a class="el" href="cacatalk_8h_source.html#l00121">video_params_s::number_of_buffers</a>, <a class="el" href="common__image_8h_source.html#l00025">buffer::start</a>, <a class="el" href="cacatalk_8c_source.html#l01221">turn_video_stream_off()</a>, and <a class="el" href="cacatalk_8h_source.html#l00117">video_params_s::v4l_fd</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -569,7 +577,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l00365">365</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00109">options_s::host_IPv4</a>, <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00108">options_s::peer_name</a>, <a class="el" href="cacatalk_8h_source.html#l00146">video_out_args_s::socketfd</a>, <a class="el" href="cacatalk_8h_source.html#l00149">video_out_args_s::vid_params</a>, and <a class="el" href="cacatalk_8h_source.html#l00107">options_s::video_device_name</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00102">options_s::host_IPv4</a>, <a class="el" href="cacatalk_8h_source.html#l00112">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00101">options_s::peer_name</a>, <a class="el" href="cacatalk_8h_source.html#l00139">video_out_args_s::socketfd</a>, <a class="el" href="cacatalk_8h_source.html#l00142">video_out_args_s::vid_params</a>, and <a class="el" href="cacatalk_8h_source.html#l00100">options_s::video_device_name</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -625,7 +633,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l01290">1290</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00111">options_s::driver_choice</a>, <a class="el" href="cacatalk_8h_source.html#l00110">options_s::driver_options</a>, <a class="el" href="caca__socket_8c_source.html#l00019">get_IP_addresses()</a>, <a class="el" href="cacatalk_8h_source.html#l00109">options_s::host_IPv4</a>, <a class="el" href="cacatalk_8h_source.html#l00108">options_s::peer_name</a>, and <a class="el" href="cacatalk_8h_source.html#l00107">options_s::video_device_name</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00104">options_s::driver_choice</a>, <a class="el" href="cacatalk_8h_source.html#l00103">options_s::driver_options</a>, <a class="el" href="caca__socket_8c_source.html#l00019">get_IP_addresses()</a>, <a class="el" href="cacatalk_8h_source.html#l00102">options_s::host_IPv4</a>, <a class="el" href="cacatalk_8h_source.html#l00101">options_s::peer_name</a>, and <a class="el" href="cacatalk_8h_source.html#l00100">options_s::video_device_name</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -659,7 +667,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l01354">1354</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00126">video_params_s::buf</a>, <a class="el" href="cacatalk_8h_source.html#l00129">video_params_s::buffers</a>, <a class="el" href="cacatalk_8h_source.html#l00135">video_params_s::caca_brightness</a>, <a class="el" href="cacatalk_8h_source.html#l00136">video_params_s::caca_contrast</a>, <a class="el" href="cacatalk_8h_source.html#l00133">video_params_s::caca_dither</a>, <a class="el" href="cacatalk_8h_source.html#l00132">video_params_s::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00134">video_params_s::caca_gamma</a>, <a class="el" href="cacatalk_8h_source.html#l00068">CLEAR</a>, <a class="el" href="cacatalk_8h_source.html#l00095">_window::cols</a>, <a class="el" href="cacatalk_8h_source.html#l00139">video_params_s::cv_cols</a>, <a class="el" href="cacatalk_8h_source.html#l00138">video_params_s::cv_rows</a>, <a class="el" href="common__image_8h_source.html#l00037">image::dither</a>, <a class="el" href="cacatalk_8h_source.html#l00125">video_params_s::fmt</a>, <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00120">video_params_s::is_on</a>, <a class="el" href="common__image_8c_source.html#l00020">load_image_from_V4L_buffer()</a>, <a class="el" href="caca__socket_8h_source.html#l00037">MAXFD</a>, <a class="el" href="cacatalk_8h_source.html#l00131">video_params_s::memory</a>, <a class="el" href="common__image_8h_source.html#l00035">image::pixels</a>, <a class="el" href="cacatalk_8h_source.html#l00147">video_out_args_s::quit</a>, <a class="el" href="cacatalk_8h_source.html#l00094">_window::rows</a>, <a class="el" href="cacatalk_8h_source.html#l00146">video_out_args_s::socketfd</a>, <a class="el" href="cacatalk_8h_source.html#l00130">video_params_s::type</a>, <a class="el" href="common__image_8c_source.html#l00132">unload_image()</a>, <a class="el" href="cacatalk_8h_source.html#l00124">video_params_s::v4l_fd</a>, <a class="el" href="cacatalk_8h_source.html#l00149">video_out_args_s::vid_params</a>, <a class="el" href="cacatalk_8h_source.html#l00148">video_out_args_s::win</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::buf</a>, <a class="el" href="cacatalk_8h_source.html#l00122">video_params_s::buffers</a>, <a class="el" href="cacatalk_8h_source.html#l00128">video_params_s::caca_brightness</a>, <a class="el" href="cacatalk_8h_source.html#l00129">video_params_s::caca_contrast</a>, <a class="el" href="cacatalk_8h_source.html#l00126">video_params_s::caca_dither</a>, <a class="el" href="cacatalk_8h_source.html#l00125">video_params_s::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00127">video_params_s::caca_gamma</a>, <a class="el" href="cacatalk_8h_source.html#l00061">CLEAR</a>, <a class="el" href="cacatalk_8h_source.html#l00088">_window::cols</a>, <a class="el" href="cacatalk_8h_source.html#l00132">video_params_s::cv_cols</a>, <a class="el" href="cacatalk_8h_source.html#l00131">video_params_s::cv_rows</a>, <a class="el" href="common__image_8h_source.html#l00037">image::dither</a>, <a class="el" href="cacatalk_8h_source.html#l00118">video_params_s::fmt</a>, <a class="el" href="cacatalk_8h_source.html#l00112">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00113">video_params_s::is_on</a>, <a class="el" href="common__image_8c_source.html#l00020">load_image_from_V4L_buffer()</a>, <a class="el" href="caca__socket_8h_source.html#l00037">MAXFD</a>, <a class="el" href="cacatalk_8h_source.html#l00124">video_params_s::memory</a>, <a class="el" href="common__image_8h_source.html#l00035">image::pixels</a>, <a class="el" href="cacatalk_8h_source.html#l00140">video_out_args_s::quit</a>, <a class="el" href="cacatalk_8h_source.html#l00087">_window::rows</a>, <a class="el" href="cacatalk_8h_source.html#l00139">video_out_args_s::socketfd</a>, <a class="el" href="cacatalk_8h_source.html#l00123">video_params_s::type</a>, <a class="el" href="common__image_8c_source.html#l00132">unload_image()</a>, <a class="el" href="cacatalk_8h_source.html#l00117">video_params_s::v4l_fd</a>, <a class="el" href="cacatalk_8h_source.html#l00142">video_out_args_s::vid_params</a>, <a class="el" href="cacatalk_8h_source.html#l00141">video_out_args_s::win</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -717,7 +725,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l00894">894</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00078">textentry::buffer</a>, <a class="el" href="cacatalk_8h_source.html#l00069">BUFFER_SIZE</a>, <a class="el" href="cacatalk_8h_source.html#l00081">textentry::changed</a>, <a class="el" href="cacatalk_8h_source.html#l00080">textentry::cursor</a>, <a class="el" href="cacatalk_8h_source.html#l00108">options_s::peer_name</a>, and <a class="el" href="cacatalk_8h_source.html#l00079">textentry::size</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00071">textentry::buffer</a>, <a class="el" href="cacatalk_8h_source.html#l00062">BUFFER_SIZE</a>, <a class="el" href="cacatalk_8h_source.html#l00074">textentry::changed</a>, <a class="el" href="cacatalk_8h_source.html#l00073">textentry::cursor</a>, <a class="el" href="cacatalk_8h_source.html#l00101">options_s::peer_name</a>, and <a class="el" href="cacatalk_8h_source.html#l00072">textentry::size</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -781,7 +789,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l00791">791</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00137">video_params_s::aspect_ratio</a>, <a class="el" href="cacatalk_8h_source.html#l00126">video_params_s::buf</a>, <a class="el" href="cacatalk_8h_source.html#l00129">video_params_s::buffers</a>, <a class="el" href="cacatalk_8h_source.html#l00135">video_params_s::caca_brightness</a>, <a class="el" href="cacatalk_8h_source.html#l00136">video_params_s::caca_contrast</a>, <a class="el" href="cacatalk_8h_source.html#l00133">video_params_s::caca_dither</a>, <a class="el" href="cacatalk_8h_source.html#l00098">_window::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00132">video_params_s::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00134">video_params_s::caca_gamma</a>, <a class="el" href="cacatalk_8h_source.html#l00068">CLEAR</a>, <a class="el" href="cacatalk_8h_source.html#l00139">video_params_s::cv_cols</a>, <a class="el" href="cacatalk_8h_source.html#l00138">video_params_s::cv_rows</a>, <a class="el" href="cacatalk_8h_source.html#l00121">video_params_s::dev_name</a>, <a class="el" href="cacatalk_8h_source.html#l00125">video_params_s::fmt</a>, <a class="el" href="cacatalk_8h_source.html#l00123">video_params_s::img_height</a>, <a class="el" href="cacatalk_8h_source.html#l00122">video_params_s::img_width</a>, <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00120">video_params_s::is_on</a>, <a class="el" href="common__image_8h_source.html#l00026">buffer::length</a>, <a class="el" href="cacatalk_8h_source.html#l00131">video_params_s::memory</a>, <a class="el" href="cacatalk_8h_source.html#l00128">video_params_s::number_of_buffers</a>, <a class="el" href="cacatalk_8h_source.html#l00127">video_params_s::req</a>, <a class="el" href="common__image_8h_source.html#l00025">buffer::start</a>, <a class="el" href="cacatalk_8c_source.html#l01207">turn_video_stream_on()</a>, <a class="el" href="cacatalk_8h_source.html#l00130">video_params_s::type</a>, <a class="el" href="cacatalk_8h_source.html#l00124">video_params_s::v4l_fd</a>, <a class="el" href="cacatalk_8h_source.html#l00096">_window::video_lines</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00130">video_params_s::aspect_ratio</a>, <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::buf</a>, <a class="el" href="cacatalk_8h_source.html#l00122">video_params_s::buffers</a>, <a class="el" href="cacatalk_8h_source.html#l00128">video_params_s::caca_brightness</a>, <a class="el" href="cacatalk_8h_source.html#l00129">video_params_s::caca_contrast</a>, <a class="el" href="cacatalk_8h_source.html#l00126">video_params_s::caca_dither</a>, <a class="el" href="cacatalk_8h_source.html#l00091">_window::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00125">video_params_s::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00127">video_params_s::caca_gamma</a>, <a class="el" href="cacatalk_8h_source.html#l00061">CLEAR</a>, <a class="el" href="cacatalk_8h_source.html#l00132">video_params_s::cv_cols</a>, <a class="el" href="cacatalk_8h_source.html#l00131">video_params_s::cv_rows</a>, <a class="el" href="cacatalk_8h_source.html#l00114">video_params_s::dev_name</a>, <a class="el" href="cacatalk_8h_source.html#l00118">video_params_s::fmt</a>, <a class="el" href="cacatalk_8h_source.html#l00116">video_params_s::img_height</a>, <a class="el" href="cacatalk_8h_source.html#l00115">video_params_s::img_width</a>, <a class="el" href="cacatalk_8h_source.html#l00112">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00113">video_params_s::is_on</a>, <a class="el" href="common__image_8h_source.html#l00026">buffer::length</a>, <a class="el" href="cacatalk_8h_source.html#l00124">video_params_s::memory</a>, <a class="el" href="cacatalk_8h_source.html#l00121">video_params_s::number_of_buffers</a>, <a class="el" href="cacatalk_8h_source.html#l00120">video_params_s::req</a>, <a class="el" href="common__image_8h_source.html#l00025">buffer::start</a>, <a class="el" href="cacatalk_8c_source.html#l01207">turn_video_stream_on()</a>, <a class="el" href="cacatalk_8h_source.html#l00123">video_params_s::type</a>, <a class="el" href="cacatalk_8h_source.html#l00117">video_params_s::v4l_fd</a>, <a class="el" href="cacatalk_8h_source.html#l00089">_window::video_lines</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l01036">change_video_device()</a>, and <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -846,7 +854,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l01268">1268</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00098">_window::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00095">_window::cols</a>, <a class="el" href="cacatalk_8h_source.html#l00094">_window::rows</a>, <a class="el" href="cacatalk_8h_source.html#l00097">_window::video_cols</a>, and <a class="el" href="cacatalk_8h_source.html#l00096">_window::video_lines</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00091">_window::caca_format</a>, <a class="el" href="cacatalk_8h_source.html#l00088">_window::cols</a>, <a class="el" href="cacatalk_8h_source.html#l00087">_window::rows</a>, <a class="el" href="cacatalk_8h_source.html#l00090">_window::video_cols</a>, and <a class="el" href="cacatalk_8h_source.html#l00089">_window::video_lines</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -884,7 +892,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l01221">1221</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00120">video_params_s::is_on</a>, <a class="el" href="cacatalk_8h_source.html#l00130">video_params_s::type</a>, <a class="el" href="cacatalk_8h_source.html#l00124">video_params_s::v4l_fd</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00112">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00113">video_params_s::is_on</a>, <a class="el" href="cacatalk_8h_source.html#l00123">video_params_s::type</a>, <a class="el" href="cacatalk_8h_source.html#l00117">video_params_s::v4l_fd</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00419">chat()</a>, <a class="el" href="cacatalk_8c_source.html#l01235">close_video_stream()</a>, and <a class="el" href="cacatalk_8c_source.html#l00028">main()</a>.</p>
 
@@ -931,7 +939,7 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="cacatalk_8c_source.html#l01207">1207</a> of file <a class="el" href="cacatalk_8c_source.html">cacatalk.c</a>.</p>
 
-<p>References <a class="el" href="cacatalk_8h_source.html#l00119">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00120">video_params_s::is_on</a>, <a class="el" href="cacatalk_8h_source.html#l00130">video_params_s::type</a>, <a class="el" href="cacatalk_8h_source.html#l00124">video_params_s::v4l_fd</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
+<p>References <a class="el" href="cacatalk_8h_source.html#l00112">video_params_s::is_ok</a>, <a class="el" href="cacatalk_8h_source.html#l00113">video_params_s::is_on</a>, <a class="el" href="cacatalk_8h_source.html#l00123">video_params_s::type</a>, <a class="el" href="cacatalk_8h_source.html#l00117">video_params_s::v4l_fd</a>, and <a class="el" href="cacatalk_8c_source.html#l01249">xioctl()</a>.</p>
 
 <p>Referenced by <a class="el" href="cacatalk_8c_source.html#l00419">chat()</a>, and <a class="el" href="cacatalk_8c_source.html#l00791">set_video()</a>.</p>
 
@@ -1018,7 +1026,7 @@ Here is the call graph for this function:</div>
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 24 2013 16:06:42 for CACAtalk by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 24 2013 22:20:44 for CACAtalk by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>
