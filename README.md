@@ -13,9 +13,9 @@ Overview
 
 'cacatalk' demonstrates basic socket programming principles used to transfer ASCII Art data using libcaca
 (http://caca.zoy.org/wiki/libcaca), and its display drivers around ncurses, GL, conio, X11, etc.
-Video grabbing from a supported device uses the Linux Media Infrasture API (a.k.a. V4L2). This is a prove of
-concept on the power of asynchronous polling with the select() system call for file descriptors (sockets in our case),
-the use of threads, and the pure awesomeness of CACA itself (Color AsCii Art).
+It demonstrates video grabbing from a supported device uses the Linux Media Infrasture API (a.k.a. V4L2). This is a proof-of
+-concept about the power of asynchronous polling of sockets file descriptors with the help of the select() system call for file descriptors (sockets in our case),
+the use of threads (pthreads), and the pure awesomeness of CACA itself (Color AsCii Art).
 
 This code is at an experimental stage, and licensed under the WTFPL license.
 
